@@ -1,0 +1,37 @@
+# Gradle
+.gradle/
+build/
+**/build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+**/out/
+
+# Kotlin
+.kotlin/
+
+# Node / Angular (webApp)
+node_modules/
+.angular/
+dist/
+tmp/
+.npm/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# AI Models & Local Backends
+*.zip
+*.bin
+weights.json
+*.log
