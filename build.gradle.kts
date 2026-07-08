@@ -1,22 +1,11 @@
 plugins {
-    kotlin("jvm") version "2.3.0"
+    alias(libs.plugins.kotlin.jvm) apply false
+
+    alias(ui.plugins.composeHotReload) apply false
+    alias(ui.plugins.composeMultiplatform) apply false
+    alias(ui.plugins.composeCompiler) apply false
+    alias(ui.plugins.kotlinMultiplatform) apply false
 }
 
-group = "ua.vaadin"
+group = "ua.protodiv"
 version = "1.0-SNAPSHOT"
-
-repositories {
-    mavenCentral()
-}
-
-dependencies {
-    testImplementation(kotlin("test"))
-}
-
-kotlin {
-    jvmToolchain(21)
-}
-
-tasks.test {
-    useJUnitPlatform()
-}
