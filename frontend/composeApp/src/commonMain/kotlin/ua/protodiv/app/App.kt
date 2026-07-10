@@ -9,7 +9,7 @@ import ua.cryptoflow.app.ui.theme.SnakeAITheme
 fun App() {
     SnakeAITheme {
         Scaffold {
-            Text(text = "Kotlin Multiplatform App")
+
         }
     }
 }
