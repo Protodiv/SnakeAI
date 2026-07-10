@@ -1,4 +1,4 @@
-# SnakeAiCompose
+# SnakeAi
 
 > [!NOTE]
 > Currently, the project has already been written for the JVM platform, and the goal is to rewrite it for **Compose Multiplatform**. Please note that the project is currently **under construction**.
@@ -6,7 +6,9 @@
 **SnakeAi** is a game application that integrates a classic **Snake Game** with a reinforcement learning agent trained via **Deep Q-Learning**. The game's graphical user interface is being rebuilt using **Compose Multiplatform**, and the AI agent is powered by **Deeplearning4j (DL4J)**.
 
 ---
-<video src="doc/demo.mp4" width="100%" controls autoplay loop muted></video>
+
+![Snake AI Demo](doc/demo.png)
+
 ---
 
 ## 🚀 Key Features
