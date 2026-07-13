@@ -8,6 +8,7 @@ plugins {
     alias(ui.plugins.composeMultiplatform)
     alias(ui.plugins.composeCompiler)
     alias(ui.plugins.composeHotReload)
+    alias(libs.plugins.jetbrains.serialization)
 }
 
 kotlin {
@@ -33,8 +34,10 @@ kotlin {
         commonMain.dependencies {
 
             implementation(ui.bundles.koin)
+            implementation(libs.kotlinx.serialization.json)
             implementation(ui.precompose)
             implementation(ui.bundles.material)
+            implementation(libs.bundles.ktor.common)
 
             implementation(compose.runtime)
             implementation(compose.foundation)
@@ -52,6 +55,7 @@ kotlin {
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(ui.kotlinx.coroutinesSwing)
+            implementation(libs.ktor.client.cio)
         }
 //        wasmJsMain.dependencies {
 //        }

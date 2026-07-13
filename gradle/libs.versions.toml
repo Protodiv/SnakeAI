@@ -1,6 +1,30 @@
 [versions]
 jdkVersion = "21"
 kotlin = "2.3.0"
+ktor = "3.0.3"
+serialization-json-jvm = "1.7.3"
+
+[libraries]
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization-json-jvm" }
+kotlinx-serialization-json-wasm = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json-wasm-js", version.ref = "serialization-json-jvm" }
+
+# Ktor client libraries
+ktor-client-core = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktor" }
+ktor-client-logging = { group = "io.ktor", name = "ktor-client-logging", version.ref = "ktor" }
+ktor-client-content-negotiation = { group = "io.ktor", name = "ktor-client-content-negotiation", version.ref = "ktor" }
+ktor-client-cio = { group = "io.ktor", name = "ktor-client-cio", version.ref = "ktor" }
+ktor-client-js = { group = "io.ktor", name = "ktor-client-js", version.ref = "ktor" }
+ktor-serialization-kotlinx-json = { group = "io.ktor", name = "ktor-serialization-kotlinx-json", version.ref = "ktor" }
+
+[bundles]
+ktor-common = [
+    "ktor-client-core",
+    "ktor-client-logging",
+    "ktor-client-content-negotiation",
+    "ktor-serialization-kotlinx-json",
+    "ktor-client-cio"
+]
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+jetbrains-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
