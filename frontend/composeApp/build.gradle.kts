@@ -1,10 +1,8 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(ui.plugins.kotlinMultiplatform)
-//    alias(ui.plugins.androidApplication)
     alias(ui.plugins.composeMultiplatform)
     alias(ui.plugins.composeCompiler)
     alias(ui.plugins.composeHotReload)
@@ -12,26 +10,17 @@ plugins {
 }
 
 kotlin {
-//    androidTarget {
-//        compilerOptions {
-//            jvmTarget.set(JvmTarget.JVM_11)
-//        }
-//    }
-    
     jvm()
     
-//    @OptIn(ExperimentalWasmDsl::class)
-//    wasmJs {
-//        browser()
-//        binaries.executable()
-//    }
+    @OptIn(ExperimentalWasmDsl::class)
+    wasmJs {
+        browser()
+        binaries.executable()
+    }
     
     sourceSets {
-//        androidMain.dependencies {
-//            implementation(compose.preview)
-//            implementation(ui.androidx.activity.compose)
-//        }
         commonMain.dependencies {
+            implementation(projects.contract.snakeai)
 
             implementation(ui.bundles.koin)
             implementation(libs.kotlinx.serialization.json)
@@ -49,57 +38,24 @@ kotlin {
             implementation(ui.androidx.lifecycle.runtimeCompose)
             implementation(ui.kotlinx.collections.immutable)
         }
-//        commonTest.dependencies {
-//            implementation(ui.kotlin.test)
-//        }
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(ui.kotlinx.coroutinesSwing)
             implementation(libs.ktor.client.cio)
         }
-//        wasmJsMain.dependencies {
-//        }
+        wasmJsMain.dependencies {
+            implementation(libs.ktor.client.js)
+        }
     }
 }
 
-//android {
-//    namespace = "ua.protodiv.app"
-//    compileSdk = ui.versions.android.compileSdk.get().toInt()
-//
-//    defaultConfig {
-//        applicationId = "ua.protodiv.app"
-//        minSdk = ui.versions.android.minSdk.get().toInt()
-//        targetSdk = ui.versions.android.targetSdk.get().toInt()
-//        versionCode = 1
-//        versionName = "1.0"
-//    }
-//    packaging {
-//        resources {
-//            excludes += "/META-INF/{AL2.0,LGPL2.1}"
-//        }
-//    }
-//    buildTypes {
-//        getByName("release") {
-//            isMinifyEnabled = false
-//        }
-//    }
-//    compileOptions {
-//        sourceCompatibility = JavaVersion.VERSION_11
-//        targetCompatibility = JavaVersion.VERSION_11
-//    }
-//}
-
-//dependencies {
-//    debugImplementation(compose.uiTooling)
-//}
-
 compose.desktop {
     application {
-        mainClass = "ua.protodiv.app.MainKt"
+        mainClass = "ua.snakeai.app.MainKt"
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "ua.protodiv.app"
+            packageName = "ua.snakeai.app"
             packageVersion = "1.0.0"
         }
     }

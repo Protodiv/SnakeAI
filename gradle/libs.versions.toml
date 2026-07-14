@@ -1,7 +1,7 @@
 [versions]
 jdkVersion = "21"
 kotlin = "2.3.0"
-ktor = "3.0.3"
+ktor = "3.3.0"
 serialization-json-jvm = "1.7.3"
 
 [libraries]
