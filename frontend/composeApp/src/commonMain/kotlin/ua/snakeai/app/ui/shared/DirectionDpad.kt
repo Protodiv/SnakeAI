@@ -18,11 +18,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import ua.snakeai.app.ui.theme.cyberColors
 import ua.snakeai.app.ui.theme.spacing
-import ua.snakeai.app.view.game.GameContract
+import ua.snakeai.contract.Direction
 
 @Composable
 fun DirectionDpad(
-    currentDirection: GameContract.Direction,
+    currentDirection: Direction,
     modifier: Modifier = Modifier
 ) {
     val spacing = MaterialTheme.spacing
@@ -35,7 +35,7 @@ fun DirectionDpad(
         // Up button
         DpadButton(
             icon = Icons.Default.ArrowUpward,
-            isActive = currentDirection == GameContract.Direction.UP
+            isActive = currentDirection == Direction.UP
         )
 
         Row(
@@ -45,7 +45,7 @@ fun DirectionDpad(
             // Left button
             DpadButton(
                 icon = Icons.Default.ArrowBack,
-                isActive = currentDirection == GameContract.Direction.LEFT
+                isActive = currentDirection == Direction.LEFT
             )
 
             Spacer(modifier = Modifier.width(spacing.md))
@@ -53,14 +53,14 @@ fun DirectionDpad(
             // Right button
             DpadButton(
                 icon = Icons.Default.ArrowForward,
-                isActive = currentDirection == GameContract.Direction.RIGHT
+                isActive = currentDirection == Direction.RIGHT
             )
         }
 
         // Down button
         DpadButton(
             icon = Icons.Default.ArrowDownward,
-            isActive = currentDirection == GameContract.Direction.DOWN
+            isActive = currentDirection == Direction.DOWN
         )
     }
 }
