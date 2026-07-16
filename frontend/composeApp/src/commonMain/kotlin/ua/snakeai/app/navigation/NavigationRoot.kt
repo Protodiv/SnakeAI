@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import moe.tlaster.precompose.navigation.NavHost
 import moe.tlaster.precompose.navigation.rememberNavigator
 import ua.snakeai.app.screens.main.MainMenuScene
+import ua.snakeai.app.screens.main.PlayManualScene
 
 @Composable
 fun NavigationRoot(
@@ -29,12 +30,7 @@ fun NavigationRoot(
             MainMenuScene(navigator = { navigator })
         }
         scene(route = NavigationRoute.MainRoute.PlayManualScreen.route) {
-            Box(
-                modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("Play Manual Screen (Placeholder)", color = MaterialTheme.colorScheme.onBackground)
-            }
+            PlayManualScene(navigator = { navigator })
         }
         scene(route = NavigationRoute.MainRoute.TrainDqnScreen.route) {
             Box(

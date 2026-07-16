@@ -67,16 +67,10 @@ fun MainMenuScreen(
         modifier = Modifier
             .fillMaxSize()
             .drawBehind {
-                // Radial gradient 1 (Top Center Glow)
-                drawRect(color = cyberColors.backgroundStart)
-                drawCircle(
-                    brush = Brush.radialGradient(
-                        colors = listOf(cyberColors.backgroundEnd, Color.Transparent),
-                        center = Offset(size.width / 2f, -size.height * 0.2f),
-                        radius = size.height * 0.7f
-                    ),
-                    radius = size.height * 0.7f,
-                    center = Offset(size.width / 2f, -size.height * 0.2f)
+                // Shared top background circles
+                drawBackgroundCircle(
+                    backgroundStart = cyberColors.backgroundStart,
+                    backgroundEnd = cyberColors.backgroundEnd
                 )
                 // Radial gradient 2 (Bottom Left Glow)
                 drawCircle(
