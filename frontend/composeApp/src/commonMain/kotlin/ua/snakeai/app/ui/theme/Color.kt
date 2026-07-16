@@ -34,7 +34,9 @@ data class CyberColors(
     val snakeHead: Color = CrimsonRed,
     val snakeBodyStart: Color = CyberCyan,
     val snakeBodyEnd: Color = NeonBlue,
-    val apple: Color = NeonGreen
+    val apple: Color = NeonGreen,
+    val gameOverOverlay: Color = Color(0xE6150505),
+    val victoryOverlay: Color = Color(0xE6051505)
 ) {
     val backgroundGradient: Brush
         get() = Brush.linearGradient(listOf(backgroundStart, backgroundEnd))

@@ -19,11 +19,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import ua.snakeai.app.ui.theme.cyberColors
 import ua.snakeai.app.ui.theme.spacing
-import ua.snakeai.app.view.game.GameContract
+import ua.snakeai.contract.Direction
 
 @Composable
 fun ActiveDirBadge(
-    direction: GameContract.Direction,
+    direction: Direction,
     modifier: Modifier = Modifier
 ) {
     val cyberColors = MaterialTheme.cyberColors
@@ -37,10 +37,10 @@ fun ActiveDirBadge(
             .padding(horizontal = spacing.sm, vertical = spacing.xs)
     ) {
         val icon = when (direction) {
-            GameContract.Direction.UP -> Icons.Default.ArrowUpward
-            GameContract.Direction.DOWN -> Icons.Default.ArrowDownward
-            GameContract.Direction.LEFT -> Icons.Default.ArrowBack
-            GameContract.Direction.RIGHT -> Icons.Default.ArrowForward
+            Direction.UP -> Icons.Default.ArrowUpward
+            Direction.DOWN -> Icons.Default.ArrowDownward
+            Direction.LEFT -> Icons.Default.ArrowBack
+            Direction.RIGHT -> Icons.Default.ArrowForward
         }
 
         Icon(
