@@ -7,5 +7,5 @@ plugins {
     alias(ui.plugins.kotlinMultiplatform) apply false
 }
 
-group = "ua.protodiv"
+group = "ua.snakeai"
 version = "1.0-SNAPSHOT"
