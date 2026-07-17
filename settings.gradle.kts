@@ -38,3 +38,4 @@ dependencyResolutionManagement {
 
 include(":frontend:composeApp")
 include(":contract:snakeai")
+include(":backend")

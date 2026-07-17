@@ -3,10 +3,19 @@ jdkVersion = "21"
 kotlin = "2.3.0"
 ktor = "3.3.0"
 serialization-json-jvm = "1.7.3"
+springBoot = "3.3.4"
+springDependencyManagement = "1.1.6"
+dl4j = "1.0.0-M2.1"
+kotlinx-coroutines = "1.10.2"
 
 [libraries]
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization-json-jvm" }
 kotlinx-serialization-json-wasm = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json-wasm-js", version.ref = "serialization-json-jvm" }
+
+# Coroutines
+kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
+kotlinx-coroutines-reactor = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-reactor", version.ref = "kotlinx-coroutines" }
+
 
 # Ktor client libraries
 ktor-client-core = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktor" }
@@ -15,6 +24,16 @@ ktor-client-content-negotiation = { group = "io.ktor", name = "ktor-client-conte
 ktor-client-cio = { group = "io.ktor", name = "ktor-client-cio", version.ref = "ktor" }
 ktor-client-js = { group = "io.ktor", name = "ktor-client-js", version.ref = "ktor" }
 ktor-serialization-kotlinx-json = { group = "io.ktor", name = "ktor-serialization-kotlinx-json", version.ref = "ktor" }
+ktor-client-websockets = { group = "io.ktor", name = "ktor-client-websockets", version.ref = "ktor" }
+
+# Spring Boot & Database libraries
+spring-boot-starter-webflux = { group = "org.springframework.boot", name = "spring-boot-starter-webflux", version.ref = "springBoot" }
+spring-boot-starter-data-jpa = { group = "org.springframework.boot", name = "spring-boot-starter-data-jpa", version.ref = "springBoot" }
+h2-database = { group = "com.h2database", name = "h2", version = "2.2.224" }
+
+# Deep Learning (DL4J + ND4J CPU)
+dl4j-core = { group = "org.deeplearning4j", name = "deeplearning4j-core", version.ref = "dl4j" }
+nd4j-native = { group = "org.nd4j", name = "nd4j-native-platform", version.ref = "dl4j" }
 
 [bundles]
 ktor-common = [
@@ -22,9 +41,12 @@ ktor-common = [
     "ktor-client-logging",
     "ktor-client-content-negotiation",
     "ktor-serialization-kotlinx-json",
-    "ktor-client-cio"
+    "ktor-client-websockets"
 ]
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 jetbrains-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+spring-boot = { id = "org.springframework.boot", version.ref = "springBoot" }
+spring-dependency-management = { id = "io.spring.dependency-management", version.ref = "springDependencyManagement" }
+

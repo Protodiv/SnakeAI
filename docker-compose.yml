@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      - model_data:/app/models
+      - db_data:/app/db
+    environment:
+      - MODEL_STORAGE_PATH=/app/models
+      - DATABASE_PATH=/app/db/snakeai
+
+  frontend-web:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  model_data:
+  db_data:

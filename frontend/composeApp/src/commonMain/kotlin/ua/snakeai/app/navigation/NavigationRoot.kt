@@ -13,6 +13,7 @@ import moe.tlaster.precompose.navigation.NavHost
 import moe.tlaster.precompose.navigation.rememberNavigator
 import ua.snakeai.app.screens.main.MainMenuScene
 import ua.snakeai.app.screens.main.PlayManualScene
+import ua.snakeai.app.screens.main.TrainDqnScene
 
 @Composable
 fun NavigationRoot(
@@ -27,18 +28,13 @@ fun NavigationRoot(
         initialRoute = NavigationRoute.MainRoute.MainScreen.route,
     ) {
         scene(route = NavigationRoute.MainRoute.MainScreen.route) {
-            MainMenuScene(navigator = { navigator })
+            MainMenuScene(navigator = navigator)
         }
         scene(route = NavigationRoute.MainRoute.PlayManualScreen.route) {
-            PlayManualScene(navigator = { navigator })
+            PlayManualScene(navigator = navigator)
         }
         scene(route = NavigationRoute.MainRoute.TrainDqnScreen.route) {
-            Box(
-                modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("Train DQN Screen (Placeholder)", color = MaterialTheme.colorScheme.onBackground)
-            }
+            TrainDqnScene(navigator = navigator)
         }
         scene(route = NavigationRoute.MainRoute.PlayAiScreen.route) {
             Box(

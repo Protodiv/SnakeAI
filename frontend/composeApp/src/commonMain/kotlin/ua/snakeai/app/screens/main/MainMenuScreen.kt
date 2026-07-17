@@ -37,20 +37,19 @@ import ua.snakeai.app.view.main.mainmenu.MainMenuViewModel
 
 @Composable
 fun MainMenuScene(
-    navigator: () -> Navigator
+    navigator: Navigator
 ) {
     val viewModel: MainMenuViewModel = koinViewModel()
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val nav = navigator()
 
     LaunchedEffect(viewModel) {
-        viewModel.navigation.collectLatest(nav::handle)
+        viewModel.navigation.collectLatest(navigator::handle)
     }
 
     MainMenuScreen(
         state = state,
         onEvent = viewModel::onEvent,
-        onNavigationRequested = nav::handle
+        onNavigationRequested = navigator::handle
     )
 }
 
@@ -150,25 +149,24 @@ fun MainMenuScreen(
             Spacer(modifier = Modifier.height(spacing.xxl))
 
             // Footer Stats
-            val statList = remember(state.modelInfo) {
-                persistentListOf(
-                    StatItem(
-                        value = state.modelInfo?.episodesRun?.let { formatEpisodes(it) } ?: "1.2M+",
-                        label = "EPISODES RUN",
-                        valueColor = cyberColors.highlightStart
-                    ),
-                    StatItem(
-                        value = state.modelInfo?.efficiency?.let { "$it%" } ?: "98.4%",
-                        label = "EFFICIENCY",
-                        valueColor = cyberColors.apple
-                    ),
-                    StatItem(
-                        value = state.modelInfo?.topScore?.toString() ?: "428",
-                        label = "TOP SCORE",
-                        valueColor = cyberColors.snakeHead
-                    )
+            val info = state.modelInfo
+            val statList = persistentListOf(
+                StatItem(
+                    value = if (info != null) formatEpisodes(info.episodesRun) else "0",
+                    label = "EPISODES RUN",
+                    valueColor = cyberColors.highlightStart
+                ),
+                StatItem(
+                    value = if (info != null) "${info.efficiency}%" else "0.0%",
+                    label = "EFFICIENCY",
+                    valueColor = cyberColors.apple
+                ),
+                StatItem(
+                    value = info?.topScore?.toString() ?: "0",
+                    label = "TOP SCORE",
+                    valueColor = cyberColors.snakeHead
                 )
-            }
+            )
             FooterStatsPanel(stats = statList)
         }
     }

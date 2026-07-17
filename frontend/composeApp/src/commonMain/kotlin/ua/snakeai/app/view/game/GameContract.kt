@@ -33,5 +33,7 @@ interface GameContract {
         data class OnFieldSizeConfigChanged(val size: FieldSize) : Event
     }
 
-    sealed interface Effect : UiEffect
+    sealed interface Effect : UiEffect {
+        data class ShowSnackBar(val message: String) : Effect
+    }
 }

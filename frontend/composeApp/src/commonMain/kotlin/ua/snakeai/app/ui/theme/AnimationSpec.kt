@@ -48,8 +48,6 @@ fun ZoomNavTransition() = NavTransition(
     exitTargetContentZIndex = 0f
 )
 
-// Swipe
-
 // Balanced default (your current setup)
 val DefaultSwipe = SwipeProperties(
     positionalThreshold = { distance -> distance * 0.5f },
