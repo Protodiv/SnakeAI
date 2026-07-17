@@ -69,5 +69,9 @@ data class TrainingMetricsFrame(
 @Serializable
 data class ErrorResponse(
     val message: String? = null,
-    val code: String? = null
+    val code: String? = null,
+    val timestamp: String? = null,
+    val status: Int? = null,
+    val error: String? = null,
+    val path: String? = null
 )
