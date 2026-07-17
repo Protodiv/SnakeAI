@@ -62,13 +62,15 @@ class TrainDqnViewModel(
                     fieldSize = currentState.fieldSize,
                     hyperparameters = currentState.hyperparameters
                 ).catch { e ->
+                    val errorMsg = e.message ?: "Unknown error"
                     updateState {
                         it.copy(
-                            error = "Training stream failed: ${e.message}",
+                            error = "Training stream failed: $errorMsg",
                             isTraining = false,
-                            logs = it.logs + ">> ERROR: ${e.message}"
+                            logs = it.logs + ">> ERROR: $errorMsg"
                         )
                     }
+                    emitEffect(TrainDqnContract.Effect.ShowToast("Training stream failed: $errorMsg"))
                 }.collect { frame ->
                     val metrics = frame.metrics
                     val logLine = formatLogLine(metrics)
@@ -80,13 +82,15 @@ class TrainDqnViewModel(
                     }
                 }
             } catch (e: Exception) {
+                val errorMsg = e.message ?: "Unknown error"
                 updateState {
                     it.copy(
-                        error = e.message,
+                        error = errorMsg,
                         isTraining = false,
-                        logs = it.logs + ">> ERROR: ${e.message}"
+                        logs = it.logs + ">> ERROR: $errorMsg"
                     )
                 }
+                emitEffect(TrainDqnContract.Effect.ShowToast(errorMsg))
             }
         }
     }

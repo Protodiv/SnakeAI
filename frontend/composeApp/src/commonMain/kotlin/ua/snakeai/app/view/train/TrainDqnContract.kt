@@ -26,5 +26,7 @@ interface TrainDqnContract {
         data object OnClearLogsClicked : Event
     }
 
-    sealed interface Effect : UiEffect
+    sealed interface Effect : UiEffect {
+        data class ShowToast(val message: String) : Effect
+    }
 }
