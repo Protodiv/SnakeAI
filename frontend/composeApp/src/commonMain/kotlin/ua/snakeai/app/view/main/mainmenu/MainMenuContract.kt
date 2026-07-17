@@ -9,7 +9,6 @@ import ua.snakeai.contract.TrainedAiModel
 interface MainMenuContract {
     @Immutable
     data class State(
-        val errorMessage: String? = null,
         val modelInfo: TrainedAiModel? = null,
         val isLoading: Boolean = false,
         val isSystemOnline: Boolean = true
@@ -22,5 +21,7 @@ interface MainMenuContract {
         data object OnRefreshModelClicked : Event
     }
 
-    sealed interface Effect : UiEffect
+    sealed interface Effect : UiEffect {
+        data class ShowToast(val message: String) : Effect
+    }
 }

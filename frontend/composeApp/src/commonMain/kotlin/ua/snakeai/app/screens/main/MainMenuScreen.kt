@@ -29,6 +29,8 @@ import org.koin.compose.viewmodel.koinViewModel
 import ua.snakeai.app.core.mvi.NavigationEffect
 import ua.snakeai.app.core.mvi.handle
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collect
 import ua.snakeai.app.ui.shared.*
 import ua.snakeai.app.ui.theme.spacing
 import ua.snakeai.app.ui.theme.cyberColors
@@ -48,19 +50,30 @@ fun MainMenuScene(
 
     MainMenuScreen(
         state = state,
-        onEvent = viewModel::onEvent,
-        onNavigationRequested = navigator::handle
+        effect = { viewModel.effect },
+        onEvent = viewModel::onEvent
     )
 }
 
 @Composable
 fun MainMenuScreen(
     state: MainMenuContract.State,
-    onEvent: (MainMenuContract.Event) -> Unit,
-    onNavigationRequested: (NavigationEffect) -> Unit
+    effect: () -> Flow<MainMenuContract.Effect>,
+    onEvent: (MainMenuContract.Event) -> Unit
 ) {
     val cyberColors = MaterialTheme.cyberColors
     val spacing = MaterialTheme.spacing
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(effect) {
+        effect().collectLatest { effect ->
+            when (effect) {
+                is MainMenuContract.Effect.ShowToast -> {
+                    snackbarHostState.showSnackbar(effect.message)
+                }
+            }
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -169,5 +182,12 @@ fun MainMenuScreen(
             )
             FooterStatsPanel(stats = statList)
         }
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 16.dp)
+        )
     }
 }

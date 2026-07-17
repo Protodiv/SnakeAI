@@ -46,10 +46,11 @@ class MainMenuViewModel(
 
     private fun loadModelInfo() {
         viewModelScope.launch {
-            updateState { it.copy(isLoading = true, errorMessage = null) }
+            updateState { it.copy(isLoading = true) }
             when (val result = repository.getAiModels()) {
                 is AppResult.Success -> {
-                    val model = result.data.maxByOrNull { it.topScore } ?: ua.snakeai.contract.TrainedAiModel(
+                    val models = result.data
+                    val model = models.maxByOrNull { it.topScore } ?: ua.snakeai.contract.TrainedAiModel(
                         name = "Agent Alpha",
                         episodesRun = 0L,
                         efficiency = 0.0,
@@ -61,14 +62,16 @@ class MainMenuViewModel(
                             modelInfo = model
                         )
                     }
+                    emitEffect(MainMenuContract.Effect.ShowToast("Successfully loaded ${models.size} AI models"))
                 }
                 is AppResult.Error -> {
+                    val errorMsg = "Error loading model: ${result.error}"
                     updateState {
                         it.copy(
                             isLoading = false,
-                            errorMessage = "Error loading model: ${result.error}"
                         )
                     }
+                    emitEffect(MainMenuContract.Effect.ShowToast(errorMsg))
                 }
             }
         }

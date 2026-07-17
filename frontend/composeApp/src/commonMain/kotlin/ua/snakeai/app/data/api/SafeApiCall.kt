@@ -1,5 +1,8 @@
 package ua.snakeai.app.data.api
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+
 sealed class AppResult<out T> {
     data class Success<out T>(val data: T) : AppResult<T>()
     data class Error(val error: DomainError) : AppResult<Nothing>()
@@ -8,16 +11,18 @@ sealed class AppResult<out T> {
 suspend fun <T> safeApiCall(
     call: suspend () -> T
 ): AppResult<T> {
-    return try {
-        AppResult.Success(call())
-    } catch (e: ApiException.ServerError) {
-        AppResult.Error(e.toCommonError())
-    } catch (e: ApiException.NetworkError) {
-        AppResult.Error(CommonError.NoInternet)
-    } catch (e: ApiException.Timeout) {
-        AppResult.Error(CommonError.ServerUnavailable)
-    } catch (_: ApiException) {
-        AppResult.Error(CommonError.Unknown)
+    return withContext(Dispatchers.Default){
+        try {
+            AppResult.Success(call())
+        } catch (e: ApiException.ServerError) {
+            AppResult.Error(e.toCommonError())
+        } catch (e: ApiException.NetworkError) {
+            AppResult.Error(CommonError.NoInternet)
+        } catch (e: ApiException.Timeout) {
+            AppResult.Error(CommonError.ServerUnavailable)
+        } catch (_: ApiException) {
+            AppResult.Error(CommonError.Unknown)
+        }
     }
 }
 
