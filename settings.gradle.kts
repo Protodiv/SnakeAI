@@ -5,37 +5,34 @@ enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 pluginManagement {
 
     repositories {
-        google {
-            mavenContent {
-                includeGroupAndSubgroups("androidx")
-                includeGroupAndSubgroups("com.android")
-                includeGroupAndSubgroups("com.google")
-            }
-        }
         gradlePluginPortal()
-        mavenCentral()
+        maven("https://packages.jetbrains.team/maven/p/cmp/dev")
+        google()
     }
 }
 
 dependencyResolutionManagement {
     repositories {
-        google {
-            mavenContent {
-                includeGroupAndSubgroups("androidx")
-                includeGroupAndSubgroups("com.android")
-                includeGroupAndSubgroups("com.google")
-            }
-        }
+        google()
         mavenCentral()
+        maven("https://packages.jetbrains.team/maven/p/cmp/dev")
     }
 
     versionCatalogs {
+        create("libs") {
+            version("kotlin", extra["kotlin.version"].toString())
+            version("compose", extra["compose.version"].toString())
+            version("agp", extra["agp.version"].toString())
+        }
         create("ui") {
             from(files("/gradle/ui.versions.toml"))
+            version("kotlin", extra["kotlin.version"].toString())
+            version("compose", extra["compose.version"].toString())
+            version("agp", extra["agp.version"].toString())
         }
     }
 }
 
 include(":frontend:composeApp")
 include(":contract:snakeai")
-include(":backend")
+include(":backend")

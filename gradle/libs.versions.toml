@@ -1,6 +1,6 @@
 [versions]
-jdkVersion = "21"
-kotlin = "2.3.0"
+java = "21"
+kotlin = "2.4.10"
 ktor = "3.3.0"
 serialization-json-jvm = "1.7.3"
 springBoot = "3.3.4"
@@ -41,7 +41,8 @@ ktor-common = [
     "ktor-client-logging",
     "ktor-client-content-negotiation",
     "ktor-serialization-kotlinx-json",
-    "ktor-client-websockets"
+    "ktor-client-websockets",
+    "ktor-client-cio"
 ]
 
 [plugins]

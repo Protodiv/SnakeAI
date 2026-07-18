@@ -9,6 +9,8 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -24,11 +26,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavHostController
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
-import moe.tlaster.precompose.navigation.Navigator
 import org.koin.compose.viewmodel.koinViewModel
-import ua.snakeai.app.core.mvi.handle
 import ua.snakeai.app.ui.shared.*
 import ua.snakeai.app.ui.theme.cyberColors
 import ua.snakeai.app.ui.theme.spacing
@@ -38,13 +40,9 @@ import ua.snakeai.app.view.game.GameViewModel
 import ua.snakeai.contract.Direction
 import ua.snakeai.contract.GameStatus
 
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import kotlinx.coroutines.flow.Flow
-
 @Composable
 fun PlayManualScene(
-    navigator: Navigator
+    navigator: NavHostController
 ) {
     val gameViewModel: GameViewModel = koinViewModel()
     val state by gameViewModel.state.collectAsStateWithLifecycle()
@@ -66,7 +64,7 @@ fun PlayManualScreen(
 ) {
     val cyberColors = MaterialTheme.cyberColors
     val spacing = MaterialTheme.spacing
-    val keyList = remember { persistentListOf("W", "A", "S", "D") }
+    val keyList = persistentListOf("W", "A", "S", "D")
     val snackbarHostState = remember { SnackbarHostState() }
     val focusRequester = remember { FocusRequester() }
 

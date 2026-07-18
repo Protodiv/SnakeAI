@@ -29,8 +29,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavHostController
 import kotlinx.coroutines.flow.collectLatest
-import moe.tlaster.precompose.navigation.Navigator
 import org.koin.compose.viewmodel.koinViewModel
 import ua.snakeai.app.ui.shared.CyberBackButton
 import ua.snakeai.app.ui.shared.ScanlineOverlay
@@ -44,7 +44,7 @@ import kotlin.math.pow
 
 @Composable
 fun TrainDqnScene(
-    navigator: Navigator
+    navigator: NavHostController
 ) {
     val viewModel: TrainDqnViewModel = koinViewModel()
     val state by viewModel.state.collectAsStateWithLifecycle()

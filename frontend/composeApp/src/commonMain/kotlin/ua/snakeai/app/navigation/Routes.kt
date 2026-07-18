@@ -28,4 +28,14 @@ sealed class NavigationRoute : TopLevelRoute {
             override val title: String = "Play AI"
         }
     }
+
+    companion object {
+        fun valueOf(route: String?): MainRoute = when (route) {
+            MainRoute.MainScreen.route -> MainRoute.MainScreen
+            MainRoute.PlayManualScreen.route -> MainRoute.PlayManualScreen
+            MainRoute.TrainDqnScreen.route -> MainRoute.TrainDqnScreen
+            MainRoute.PlayAiScreen.route -> MainRoute.PlayAiScreen
+            else -> MainRoute.MainScreen
+        }
+    }
 }

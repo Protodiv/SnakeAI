@@ -1,42 +1,60 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
-import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(ui.plugins.kotlinMultiplatform)
+    alias(ui.plugins.androidMultiplatformLibrary)
     alias(ui.plugins.composeMultiplatform)
     alias(ui.plugins.composeCompiler)
-    alias(ui.plugins.composeHotReload)
-    alias(libs.plugins.jetbrains.serialization)
 }
 
 kotlin {
-    jvm()
-    
-    @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
         browser()
         binaries.executable()
     }
-    
+
+    jvm()
+
+    android {
+        namespace = "ua.snakeai.app"
+        compileSdk = 37
+        minSdk = 26
+
+        androidResources {
+            enable = true
+        }
+        compilerOptions {
+            jvmTarget = JvmTarget.JVM_17
+        }
+    }
+
     sourceSets {
+        all {
+            languageSettings {
+                optIn("androidx.compose.material3.ExperimentalMaterial3Api")
+            }
+        }
+
         commonMain.dependencies {
             implementation(projects.contract.snakeai)
 
             implementation(ui.bundles.koin)
             implementation(libs.kotlinx.serialization.json)
-            implementation(ui.precompose)
             implementation(ui.bundles.material)
             implementation(libs.bundles.ktor.common)
 
-            implementation(compose.runtime)
-            implementation(compose.foundation)
-            implementation(compose.material3)
-            implementation(compose.ui)
-            implementation(compose.components.resources)
-            implementation(compose.components.uiToolingPreview)
-            implementation(ui.androidx.lifecycle.viewmodelCompose)
-            implementation(ui.androidx.lifecycle.runtimeCompose)
             implementation(ui.kotlinx.collections.immutable)
+
+            implementation(ui.compose.foundation)
+            implementation(ui.compose.material3)
+            implementation(ui.components.resources)
+            implementation(ui.compose.ui.tooling.preview)
+            implementation(ui.material.icons.core)
+
+            implementation(ui.androidx.lifecycle.runtime.compose)
+            implementation(ui.androidx.lifecycle.viewmodel.compose)
+            implementation(ui.androidx.navigation.compose)
         }
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
@@ -45,6 +63,7 @@ kotlin {
         }
         wasmJsMain.dependencies {
             implementation(libs.ktor.client.js)
+            implementation(libs.kotlinx.serialization.json.wasm)
         }
     }
 }
@@ -57,6 +76,10 @@ compose.desktop {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "ua.snakeai.app"
             packageVersion = "1.0.0"
+        }
+
+        buildTypes.release.proguard {
+            configurationFiles.from(project.file("rules.pro"))
         }
     }
 }
