@@ -27,43 +27,50 @@ fun GameArenaContainer(
     val cyberColors = MaterialTheme.cyberColors
     val spacing = MaterialTheme.spacing
 
-    Box(
-        modifier = modifier
+    BoxWithConstraints(
+        modifier = modifier,
+        contentAlignment = Alignment.Center
     ) {
-        // Inner container for clipping, background, border, and custom focus/events passed via innerModifier
+        val arenaSize = minOf(maxWidth, maxHeight)
+
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .then(innerModifier)
-                .clip(RoundedCornerShape(spacing.xs))
-                .background(cyberColors.glassFill)
-                .border(1.dp, cyberColors.glassBorder, RoundedCornerShape(spacing.xs))
+            modifier = Modifier.size(arenaSize)
         ) {
-            GamePanel(
-                state = state,
-                modifier = Modifier.fillMaxSize()
+            // Inner container for clipping, background, border, and custom focus/events passed via innerModifier
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .then(innerModifier)
+                    .clip(RoundedCornerShape(spacing.xs))
+                    .background(cyberColors.glassFill)
+                    .border(1.dp, cyberColors.glassBorder, RoundedCornerShape(spacing.xs))
+            ) {
+                GamePanel(
+                    state = state,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+
+            // Corner Badges (placed on the square parent Box so they align to the square board!)
+            CornerBadge(
+                text = protocolText,
+                textColor = cyberColors.highlightStart,
+                backgroundColor = cyberColors.glassBorder,
+                borderColor = cyberColors.highlightStart,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .offset(x = (-8).dp, y = (-8).dp)
+            )
+
+            CornerBadge(
+                text = agentNameText,
+                textColor = Color.White,
+                backgroundColor = cyberColors.snakeHead.copy(alpha = 0.9f),
+                borderColor = cyberColors.snakeHead,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .offset(x = 8.dp, y = 8.dp)
             )
         }
-
-        // Corner Badges (placed on the unclipped parent Box)
-        CornerBadge(
-            text = protocolText,
-            textColor = cyberColors.highlightStart,
-            backgroundColor = cyberColors.glassBorder,
-            borderColor = cyberColors.highlightStart,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .offset(x = (-8).dp, y = (-8).dp)
-        )
-
-        CornerBadge(
-            text = agentNameText,
-            textColor = Color.White,
-            backgroundColor = cyberColors.snakeHead.copy(alpha = 0.9f),
-            borderColor = cyberColors.snakeHead,
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .offset(x = 8.dp, y = 8.dp)
-        )
     }
 }

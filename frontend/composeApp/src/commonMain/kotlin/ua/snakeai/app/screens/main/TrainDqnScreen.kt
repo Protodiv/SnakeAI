@@ -101,6 +101,12 @@ fun TrainDqnScreen(
                     horizontalArrangement = Arrangement.spacedBy(spacing.md),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    HudStatsDisplay(
+                        score = state.gameState?.score ?: 0,
+                        topScore = state.gameState?.topScore ?: 0,
+                        steps = state.gameState?.steps ?: 0
+                    )
+                    Spacer(modifier = Modifier.width(spacing.md))
                     Text(
                         text = "EPISODE: #${state.metrics?.episode ?: 0}",
                         color = Color.White,
