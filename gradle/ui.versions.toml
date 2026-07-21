@@ -14,7 +14,6 @@ composeHotReload = "1.1.1"
 kotlinx-coroutines = "1.10.2"
 koin = "4.1.0"
 material-icons-extended = "1.7.3"
-precompose = "1.7.0-alpha03"
 kotlinx-collections-immutable = "0.3.7"
 
 

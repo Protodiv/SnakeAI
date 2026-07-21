@@ -2,6 +2,7 @@
 java = "21"
 kotlin = "2.4.10"
 ktor = "3.3.0"
+buildkonfig = "0.15.2"
 serialization-json-jvm = "1.7.3"
 springBoot = "3.3.4"
 springDependencyManagement = "1.1.6"
@@ -9,6 +10,7 @@ dl4j = "1.0.0-M2.1"
 kotlinx-coroutines = "1.10.2"
 
 [libraries]
+kotlin-reflect = { group = "org.jetbrains.kotlin", name = "kotlin-reflect", version.ref = "kotlin" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization-json-jvm" }
 kotlinx-serialization-json-wasm = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json-wasm-js", version.ref = "serialization-json-jvm" }
 
@@ -47,7 +49,9 @@ ktor-common = [
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-spring = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin" }
 jetbrains-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 spring-boot = { id = "org.springframework.boot", version.ref = "springBoot" }
 spring-dependency-management = { id = "io.spring.dependency-management", version.ref = "springDependencyManagement" }
+buildkonfig = { id = "com.codingfeline.buildkonfig", version.ref = "buildkonfig" }
 

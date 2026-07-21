@@ -25,7 +25,7 @@ dependencyResolutionManagement {
             version("agp", extra["agp.version"].toString())
         }
         create("ui") {
-            from(files("/gradle/ui.versions.toml"))
+            from(files("gradle/ui.versions.toml"))
             version("kotlin", extra["kotlin.version"].toString())
             version("compose", extra["compose.version"].toString())
             version("agp", extra["agp.version"].toString())
@@ -33,6 +33,8 @@ dependencyResolutionManagement {
     }
 }
 
-include(":frontend:composeApp")
+if (file("frontend").exists()) {
+    include(":frontend:composeApp")
+}
 include(":contract:snakeai")
 include(":backend")

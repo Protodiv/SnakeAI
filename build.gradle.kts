@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.spring.dependency.management) apply false
     war
     alias(libs.plugins.jetbrains.serialization) apply false
+    alias(libs.plugins.buildkonfig) apply false
 
     alias(ui.plugins.androidApplication) apply false
     alias(ui.plugins.androidMultiplatformLibrary) apply false

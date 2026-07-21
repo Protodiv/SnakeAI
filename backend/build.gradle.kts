@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kotlin.spring)
     alias(libs.plugins.spring.boot)
     alias(libs.plugins.spring.dependency.management)
     alias(libs.plugins.jetbrains.serialization)
@@ -14,6 +15,7 @@ repositories {
 
 dependencies {
     implementation(projects.contract.snakeai)
+    implementation(libs.kotlin.reflect)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.spring.boot.starter.webflux)
     implementation(libs.spring.boot.starter.data.jpa)

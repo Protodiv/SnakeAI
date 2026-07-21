@@ -1,0 +1,521 @@
+{
+  "info": {
+    "_postman_id": "snakeai-backend-collection",
+    "name": "SnakeAI Backend API",
+    "description": "Postman collection for testing all SnakeAI backend REST controllers.\n\n## Base URL\n`http://localhost:8080`\n\n## Endpoints\n- **REST** — `/api/models` — CRUD operations on trained AI models\n- **WebSocket** — `/ws/ai/train` — Real-time training session (use Postman WebSocket Request)\n- **WebSocket** — `/ws/ai/play`  — Real-time play session (use Postman WebSocket Request)\n\n## How to use\n1. Start the backend: `docker compose -f docker-compose-backend-only.yml up --build`\n2. Wait until you see 'Started Main' in the logs\n3. Run the requests in order (folder: Models API)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string",
+      "description": "Backend base URL"
+    },
+    {
+      "key": "modelName",
+      "value": "TestAgent",
+      "type": "string",
+      "description": "Model name used for get/delete tests. Set this after you have a trained model in DB."
+    }
+  ],
+  "item": [
+    {
+      "name": "Models API",
+      "description": "REST endpoints for managing trained AI models — mapped to ModelRestController at /api/models",
+      "item": [
+        {
+          "name": "1. List All Models",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is a JSON array', function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Each model has required fields', function () {",
+                  "    const body = pm.response.json();",
+                  "    if (body.length > 0) {",
+                  "        const model = body[0];",
+                  "        pm.expect(model).to.have.property('name');",
+                  "        pm.expect(model).to.have.property('episodesRun');",
+                  "        pm.expect(model).to.have.property('efficiency');",
+                  "        pm.expect(model).to.have.property('topScore');",
+                  "        // Auto-save the first model name for subsequent tests",
+                  "        pm.collectionVariables.set('modelName', model.name);",
+                  "        console.log('Auto-set modelName to:', model.name);",
+                  "    } else {",
+                  "        console.log('No models found - DB is empty. Train a model first via WebSocket /ws/ai/train');",
+                  "    }",
+                  "});",
+                  "",
+                  "pm.test('Content-Type is application/json', function () {",
+                  "    pm.response.to.have.header('Content-Type');",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/models",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "models"]
+            },
+            "description": "Returns a list of all trained AI models stored in the database.\n\n**Controller**: `ModelRestController.listModels()`\n**Response**: `List<TrainedAiModel>` — each entry has `name`, `episodesRun`, `efficiency`, `topScore`\n\n**Expected response when DB is empty**: `[]`\n**Expected response with data**:\n```json\n[\n  {\n    \"name\": \"Agent_20240101_120000\",\n    \"episodesRun\": 1000,\n    \"efficiency\": 7.35,\n    \"topScore\": 22\n  }\n]\n```"
+          },
+          "response": [
+            {
+              "name": "200 OK — Empty DB",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/api/models",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "models"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "[]",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ]
+            },
+            {
+              "name": "200 OK — With Models",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/api/models",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "models"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "[\n  {\n    \"name\": \"Agent_20240101_120000\",\n    \"episodesRun\": 1000,\n    \"efficiency\": 7.35,\n    \"topScore\": 22\n  }\n]",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "2. Get Model by Name",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has model entity fields', function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property('name');",
+                  "    pm.expect(body).to.have.property('episodesRun');",
+                  "    pm.expect(body).to.have.property('efficiency');",
+                  "    pm.expect(body).to.have.property('topScore');",
+                  "    pm.expect(body).to.have.property('filePath');",
+                  "    pm.expect(body).to.have.property('createdAt');",
+                  "});",
+                  "",
+                  "pm.test('Model name matches path variable', function () {",
+                  "    const body = pm.response.json();",
+                  "    const expectedName = pm.collectionVariables.get('modelName');",
+                  "    pm.expect(body.name).to.equal(expectedName);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// This test requires a model to exist in the DB.",
+                  "// Run '1. List All Models' first to auto-populate modelName,",
+                  "// OR set the 'modelName' collection variable manually."
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/models/{{modelName}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "models", "{{modelName}}"]
+            },
+            "description": "Returns the full entity details for a specific trained model by its name.\n\n**Controller**: `ModelRestController.getModel(name)`\n**Path Variable**: `name` — the model's unique name (e.g., `Agent_20240101_120000`)\n**Response**: `TrainedModelEntity` — includes `name`, `episodesRun`, `efficiency`, `topScore`, `filePath`, `createdAt`, `historyJson`\n\n**Error case** — model not found:\n```json\n{\n  \"message\": \"Model TestAgent not found\",\n  \"code\": \"RESOURCE_NOT_FOUND\",\n  \"status\": 404,\n  \"error\": \"Not Found\",\n  \"timestamp\": \"2024-01-01T12:00:00Z\",\n  \"path\": \"/api/models/TestAgent\"\n}\n```"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/api/models/{{modelName}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "models", "{{modelName}}"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"name\": \"Agent_20240101_120000\",\n  \"episodesRun\": 1000,\n  \"efficiency\": 7.35,\n  \"topScore\": 22,\n  \"filePath\": \"/app/models/Agent_20240101_120000.zip\",\n  \"createdAt\": \"2024-01-01T12:00:00\",\n  \"historyJson\": \"{\\\"rewards\\\":[...],\\\"losses\\\":[...]}\"\n}",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ]
+            },
+            {
+              "name": "404 Not Found",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/api/models/NonExistentModel",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "models", "NonExistentModel"]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "body": "{\n  \"message\": \"Model NonExistentModel not found\",\n  \"code\": \"RESOURCE_NOT_FOUND\",\n  \"status\": 404,\n  \"error\": \"Not Found\",\n  \"timestamp\": \"2024-01-01T12:00:00Z\",\n  \"path\": \"/api/models/NonExistentModel\"\n}",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "2a. Get Non-Existent Model (404 Test)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 404 Not Found', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test('Error response has required fields', function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property('message');",
+                  "    pm.expect(body).to.have.property('code');",
+                  "    pm.expect(body).to.have.property('status');",
+                  "    pm.expect(body).to.have.property('error');",
+                  "    pm.expect(body).to.have.property('timestamp');",
+                  "    pm.expect(body).to.have.property('path');",
+                  "});",
+                  "",
+                  "pm.test('Error code is NOT_FOUND', function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.code).to.equal('NOT_FOUND');",
+                  "});",
+                  "",
+                  "pm.test('Status field is 404', function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.status).to.equal(404);",
+                  "});",
+                  "",
+                  "pm.test('GlobalExceptionHandler is working correctly', function () {",
+                  "    // Verifies that GlobalExceptionHandler.handleNotFound() returned a proper ErrorResponse",
+                  "    pm.response.to.have.status(404);",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.message).to.include('not found');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/models/THIS_MODEL_DOES_NOT_EXIST_12345",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "models", "THIS_MODEL_DOES_NOT_EXIST_12345"]
+            },
+            "description": "Intentionally requests a model that does not exist to verify the `GlobalExceptionHandler` correctly returns a 404 `ErrorResponse`.\n\n**Tests**: Verifies `GlobalExceptionHandler.handleNotFound()` is wired correctly."
+          },
+          "response": []
+        },
+        {
+          "name": "3. Delete Model by Name",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response body is empty (void)', function () {",
+                  "    // DELETE returns ResponseEntity<Void> — body should be empty",
+                  "    pm.expect(pm.response.text()).to.equal('');",
+                  "});",
+                  "",
+                  "console.log('Model deleted:', pm.collectionVariables.get('modelName'));",
+                  "console.log('Run \"1. List All Models\" again to confirm deletion.');"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// WARNING: This PERMANENTLY deletes the model from DB and filesystem.",
+                  "// Make sure modelName is set to a model you want to delete.",
+                  "// Run '1. List All Models' first to populate modelName automatically."
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/models/{{modelName}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "models", "{{modelName}}"]
+            },
+            "description": "Deletes a trained model from the database AND removes its `.zip` file from disk.\n\n**Controller**: `ModelRestController.deleteModel(name)`\n**Path Variable**: `name` — the model's unique name\n**Response**: `204 No Content` / `200 OK` with empty body\n\n⚠️ **Destructive operation** — the model file is permanently deleted from `/app/models/`."
+          },
+          "response": [
+            {
+              "name": "200 OK — Deleted",
+              "originalRequest": {
+                "method": "DELETE",
+                "url": {
+                  "raw": "{{baseUrl}}/api/models/{{modelName}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "models", "{{modelName}}"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "",
+              "header": []
+            }
+          ]
+        },
+        {
+          "name": "3a. Delete Non-Existent Model (404 Test)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 404 Not Found', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test('Error response has correct structure', function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.code).to.equal('NOT_FOUND');",
+                  "    pm.expect(body.status).to.equal(404);",
+                  "    pm.expect(body).to.have.property('message');",
+                  "    pm.expect(body).to.have.property('path');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/models/THIS_MODEL_DOES_NOT_EXIST_12345",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "models", "THIS_MODEL_DOES_NOT_EXIST_12345"]
+            },
+            "description": "Attempts to delete a model that does not exist to verify the `GlobalExceptionHandler` correctly returns a 404."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "WebSocket — AI Training",
+      "description": "WebSocket endpoint at ws://localhost:8080/ws/ai/train\n\nUse Postman's 'New > WebSocket Request' for these.\nConnect to the URL and send the JSON messages below.\n\nThese are documented here as HTTP requests for reference — copy the message body and paste it into the Postman WebSocket message box.",
+      "item": [
+        {
+          "name": "[WS DOC] Connect to Training WebSocket",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Upgrade",
+                "value": "websocket"
+              },
+              {
+                "key": "Connection",
+                "value": "Upgrade"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/ws/ai/train",
+              "host": ["{{baseUrl}}"],
+              "path": ["ws", "ai", "train"]
+            },
+            "description": "## WebSocket Training Session\n\n⚠️ **This is a WebSocket endpoint** — use Postman's **New > WebSocket Request** tab.\n\n**URL**: `ws://localhost:8080/ws/ai/train`\n\n---\n\n### Message 1 — Start Training\n```json\n{\n  \"action\": \"START_TRAINING\",\n  \"modelName\": \"MyTestAgent\",\n  \"fieldSize\": \"MEDIUM\",\n  \"hyperparameters\": {\n    \"maxEpisodes\": 100,\n    \"learningRate\": 0.001,\n    \"batchSize\": 64\n  }\n}\n```\n\n### Message 2 — Stop Training\n```json\n{\n  \"action\": \"STOP\"\n}\n```\n\n### Expected Server Response (every ~200ms while training)\n```json\n{\n  \"metrics\": {\n    \"episode\": 42,\n    \"epsilon\": 0.85,\n    \"loss\": 0.0234,\n    \"averageReward\": 1.5,\n    \"topScore\": 10,\n    \"recentScore\": 7,\n    \"stepsPlayed\": 15000,\n    \"stepsPerSecond\": 312.4,\n    \"elapsedTimeMs\": 48000\n  }\n}\n```\n\n### FieldSize values\n`SMALL` | `MEDIUM` | `LARGE` | `RANDOM`"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "WebSocket — AI Play",
+      "description": "WebSocket endpoint at ws://localhost:8080/ws/ai/play\n\nUse Postman's 'New > WebSocket Request' for these.\nConnect to the URL and send the JSON messages below.",
+      "item": [
+        {
+          "name": "[WS DOC] Connect to Play WebSocket",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Upgrade",
+                "value": "websocket"
+              },
+              {
+                "key": "Connection",
+                "value": "Upgrade"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/ws/ai/play",
+              "host": ["{{baseUrl}}"],
+              "path": ["ws", "ai", "play"]
+            },
+            "description": "## WebSocket Play Session\n\n⚠️ **This is a WebSocket endpoint** — use Postman's **New > WebSocket Request** tab.\n\n**URL**: `ws://localhost:8080/ws/ai/play`\n\n---\n\n### Message 1 — Start Playing\n```json\n{\n  \"action\": \"START\",\n  \"modelName\": \"MyTestAgent\",\n  \"fieldSize\": \"MEDIUM\",\n  \"tickRateMs\": 120\n}\n```\n\n### Message 2 — Pause\n```json\n{ \"action\": \"PAUSE\" }\n```\n\n### Message 3 — Resume\n```json\n{ \"action\": \"RESUME\" }\n```\n\n### Message 4 — Restart\n```json\n{ \"action\": \"RESTART\" }\n```\n\n### Message 5 — Stop\n```json\n{ \"action\": \"STOP\" }\n```\n\n### Expected Server Response (every `tickRateMs` ms)\n```json\n{\n  \"state\": {\n    \"snake\": [{\"x\": 5, \"y\": 5}, {\"x\": 4, \"y\": 5}],\n    \"food\": {\"x\": 10, \"y\": 7},\n    \"score\": 3,\n    \"status\": \"PLAYING\",\n    \"direction\": \"RIGHT\",\n    \"fieldSize\": \"MEDIUM\"\n  },\n  \"decisionMetrics\": {\n    \"dangerStraight\": 0.0,\n    \"dangerLeft\": 1.0,\n    \"dangerRight\": 0.0,\n    \"foodNorth\": 0.0,\n    \"foodEast\": 1.0,\n    \"foodSouth\": 0.0,\n    \"foodWest\": 0.0,\n    \"qValues\": [0.75, -0.3, 0.12],\n    \"selectedAction\": \"STRAIGHT\",\n    \"isExploration\": false,\n    \"epsilon\": 0.01\n  }\n}\n```"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Health & Diagnostics",
+      "description": "Basic connectivity checks to verify the backend is up before running functional tests",
+      "item": [
+        {
+          "name": "Health Check — Spring Actuator",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Backend is UP', function () {",
+                  "    // Actuator endpoint may not be enabled — accept 200 or 404",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
+                  "    if (pm.response.code === 200) {",
+                  "        const body = pm.response.json();",
+                  "        pm.expect(body.status).to.equal('UP');",
+                  "        console.log('✅ Spring Boot Actuator: UP');",
+                  "    } else {",
+                  "        console.log('ℹ️ Actuator not enabled — this is fine. Backend responded on port 8080.');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/actuator/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["actuator", "health"]
+            },
+            "description": "Checks if Spring Boot Actuator health endpoint is available.\n\nIf you get `404`, that's fine — it means Actuator is not included as a dependency. The backend is still running.\n\nTo enable it, add to `build.gradle.kts`:\n```kotlin\nimplementation(\"org.springframework.boot:spring-boot-starter-actuator\")\n```"
+          },
+          "response": []
+        },
+        {
+          "name": "Connectivity Check — List Models (quick ping)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Backend is reachable on port 8080', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 500]);",
+                  "});",
+                  "",
+                  "pm.test('Response time is under 5000ms', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(5000);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "    console.log('✅ Backend is UP and responding on http://localhost:8080');",
+                  "} else {",
+                  "    console.log('⚠️ Backend responded with status:', pm.response.code);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/models",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "models"]
+            },
+            "description": "Quick connectivity ping — just calls `GET /api/models` to confirm the backend container is up and responding. Run this first after `docker compose up`."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

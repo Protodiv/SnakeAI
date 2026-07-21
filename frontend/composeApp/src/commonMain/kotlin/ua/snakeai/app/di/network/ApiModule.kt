@@ -4,6 +4,7 @@ import org.koin.dsl.module
 import org.koin.core.qualifier.named
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.SerializationException
+import ua.snakeai.app.BuildKonfig
 import ua.snakeai.app.di.httpClient
 import ua.snakeai.app.data.api.ApiException
 import ua.snakeai.contract.ErrorResponse
@@ -28,8 +29,8 @@ val clientModule = module {
         }
     }
 
-    single(named("ServerHost")) { "localhost" }
-    single(named("ServerPort")) { "8080" }
+    single(named("ServerHost")) { BuildKonfig.SERVER_HOST }
+    single(named("ServerPort")) { BuildKonfig.SERVER_PORT }
 
     single<HttpClient> {
         httpClient(get()) {

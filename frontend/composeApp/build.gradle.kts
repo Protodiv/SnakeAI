@@ -1,11 +1,13 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import com.codingfeline.buildkonfig.compiler.FieldSpec
 
 plugins {
     alias(ui.plugins.kotlinMultiplatform)
     alias(ui.plugins.androidMultiplatformLibrary)
     alias(ui.plugins.composeMultiplatform)
     alias(ui.plugins.composeCompiler)
+    alias(libs.plugins.buildkonfig)
 }
 
 kotlin {
@@ -81,5 +83,26 @@ compose.desktop {
         buildTypes.release.proguard {
             configurationFiles.from(project.file("rules.pro"))
         }
+    }
+}
+
+// ─── BuildConfig: server coordinates injected at compile time ─────────────────
+// Supply via environment variables when building for production:
+//   SERVER_HOST=api.example.com SERVER_PORT=443 ./gradlew wasmJsBrowserDistribution
+// Falls back to localhost:8080 for local development.
+buildkonfig {
+    packageName = "ua.snakeai.app"
+
+    defaultConfigs {
+        buildConfigField(
+            FieldSpec.Type.STRING,
+            "SERVER_HOST",
+            System.getenv("SERVER_HOST") ?: "localhost"
+        )
+        buildConfigField(
+            FieldSpec.Type.STRING,
+            "SERVER_PORT",
+            System.getenv("SERVER_PORT") ?: "8080"
+        )
     }
 }
