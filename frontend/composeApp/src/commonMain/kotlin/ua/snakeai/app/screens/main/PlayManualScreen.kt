@@ -101,28 +101,9 @@ fun PlayManualScreen(
             modifier = Modifier.fillMaxSize()
         ) {
             // Header Bar
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(spacing.xxl)
-                    .background(cyberColors.backgroundStart.copy(alpha = 0.7f))
-                    .drawBehind {
-                        val strokeWidth = 1.dp.toPx()
-                        val y = size.height - strokeWidth / 2
-                        drawLine(
-                            color = cyberColors.glassBorder.copy(alpha = 0.3f),
-                            start = Offset(0f, y),
-                            end = Offset(size.width, y),
-                            strokeWidth = strokeWidth
-                        )
-                    }
-                    .padding(horizontal = spacing.cardPadding),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            CyberHeader(
+                onBackClicked = onBackClicked
             ) {
-                // Back Button
-                CyberBackButton(onClick = onBackClicked)
-
                 // Stats / HUD Display
                 HudStatsDisplay(
                     score = state.score,
@@ -146,73 +127,42 @@ fun PlayManualScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     // Left: The square game arena container
-                    Box(
+                    GameArenaContainer(
+                        state = state,
+                        protocolText = "Protocol: Manual_Override",
+                        agentNameText = "Agent: Human_H01",
                         modifier = Modifier
                             .weight(1.3f)
-                            .aspectRatio(1f)
-                    ) {
-                        // Inner container for clipping, background, border, key events, and click focus
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .focusRequester(focusRequester)
-                                .focusable()
-                                .onKeyEvent { keyEvent ->
-                                    if (keyEvent.type == KeyEventType.KeyDown) {
-                                        val direction = when (keyEvent.key) {
-                                            Key.W, Key.DirectionUp -> Direction.UP
-                                            Key.S, Key.DirectionDown -> Direction.DOWN
-                                            Key.A, Key.DirectionLeft -> Direction.LEFT
-                                            Key.D, Key.DirectionRight -> Direction.RIGHT
-                                            else -> null
-                                        }
-                                        if (direction != null) {
-                                            onEvent(GameContract.Event.OnDirectionChanged(direction))
-                                            true
-                                        } else {
-                                            false
-                                        }
+                            .aspectRatio(1f),
+                        innerModifier = Modifier
+                            .focusRequester(focusRequester)
+                            .focusable()
+                            .onKeyEvent { keyEvent ->
+                                if (keyEvent.type == KeyEventType.KeyDown) {
+                                    val direction = when (keyEvent.key) {
+                                        Key.W, Key.DirectionUp -> Direction.UP
+                                        Key.S, Key.DirectionDown -> Direction.DOWN
+                                        Key.A, Key.DirectionLeft -> Direction.LEFT
+                                        Key.D, Key.DirectionRight -> Direction.RIGHT
+                                        else -> null
+                                    }
+                                    if (direction != null) {
+                                        onEvent(GameContract.Event.OnDirectionChanged(direction))
+                                        true
                                     } else {
                                         false
                                     }
+                                } else {
+                                    false
                                 }
-                                .clip(RoundedCornerShape(spacing.xs))
-                                .background(cyberColors.glassFill)
-                                .border(1.dp, cyberColors.glassBorder, RoundedCornerShape(spacing.xs))
-                                .clickable(
-                                    interactionSource = remember { MutableInteractionSource() },
-                                    indication = null
-                                ) {
-                                    focusRequester.requestFocus()
-                                }
-                        ) {
-                            GamePanel(
-                                state = state,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        }
-
-                        // Corner Badges (placed on the unclipped parent Box)
-                        CornerBadge(
-                            text = "Protocol: Manual_Override",
-                            textColor = cyberColors.highlightStart,
-                            backgroundColor = cyberColors.glassBorder,
-                            borderColor = cyberColors.highlightStart,
-                            modifier = Modifier
-                                .align(Alignment.TopStart)
-                                .offset(x = (-8).dp, y = (-8).dp)
-                        )
-
-                        CornerBadge(
-                            text = "Agent: Human_H01",
-                            textColor = Color.White,
-                            backgroundColor = cyberColors.snakeHead.copy(alpha = 0.9f),
-                            borderColor = cyberColors.snakeHead,
-                            modifier = Modifier
-                                .align(Alignment.BottomEnd)
-                                .offset(x = 8.dp, y = 8.dp)
-                        )
-                    }
+                            }
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null
+                            ) {
+                                focusRequester.requestFocus()
+                            }
+                    )
 
                     Spacer(modifier = Modifier.width(spacing.lg))
 

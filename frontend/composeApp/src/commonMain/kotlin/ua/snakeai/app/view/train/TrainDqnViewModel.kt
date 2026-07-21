@@ -2,13 +2,17 @@ package ua.snakeai.app.view.train
 
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import ua.snakeai.app.core.mvi.BaseViewModel
 import ua.snakeai.app.data.repository.SnakeAiRepository
-import ua.snakeai.contract.FieldSize
+import ua.snakeai.app.ui.shared.formatDouble
+import ua.snakeai.app.view.game.GameContract
+import ua.snakeai.contract.GameState
 import ua.snakeai.contract.TrainingProgressMetrics
-import kotlin.math.pow
 
 class TrainDqnViewModel(
     private val repository: SnakeAiRepository
@@ -30,9 +34,6 @@ class TrainDqnViewModel(
             TrainDqnContract.Event.OnStopTrainingClicked -> stopTraining()
             is TrainDqnContract.Event.OnModelNameChanged -> {
                 updateState { it.copy(modelName = event.name) }
-            }
-            is TrainDqnContract.Event.OnFieldSizeChanged -> {
-                updateState { it.copy(fieldSize = event.size) }
             }
             is TrainDqnContract.Event.OnHyperparametersChanged -> {
                 updateState { it.copy(hyperparameters = event.params) }
@@ -75,9 +76,15 @@ class TrainDqnViewModel(
                     val metrics = frame.metrics
                     val logLine = formatLogLine(metrics)
                     updateState {
+                        val newLogs = if (it.metrics?.episode != metrics.episode) {
+                            (it.logs + logLine).takeLast(200)
+                        } else {
+                            it.logs
+                        }
                         it.copy(
                             metrics = metrics,
-                            logs = (it.logs + logLine).takeLast(200) // Keep last 200 logs
+                            gameState = frame.gameState?.toGameContractState(metrics.topScore) ?: it.gameState,
+                            logs = newLogs
                         )
                     }
                 }
@@ -124,11 +131,20 @@ class TrainDqnViewModel(
                 "Steps/s = $spsStr"
     }
 
-    private fun formatDouble(value: Double, decimals: Int): String {
-        if (value.isNaN() || value.isInfinite()) return "0.0"
-        val factor = 10.0.pow(decimals)
-        val rounded = kotlin.math.round(value * factor) / factor
-        return rounded.toString()
+
+
+    private fun GameState.toGameContractState(topScore: Int): GameContract.State {
+        return GameContract.State(
+            score = this.score,
+            topScore = topScore,
+            steps = this.steps,
+            status = this.status,
+            direction = this.direction,
+            fieldSize = this.fieldSize,
+            selectedFieldSize = this.fieldSize,
+            snake = this.snake,
+            food = this.food
+        )
     }
 
     override fun onCleared() {

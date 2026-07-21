@@ -36,8 +36,8 @@ COPY frontend/ frontend/
 ENV SERVER_HOST=localhost
 ENV SERVER_PORT=8080
 
-RUN --mount=type=cache,target=/root/.gradle \
-    --mount=type=cache,target=/root/.konan \
+RUN --mount=type=cache,id=frontend-gradle,target=/root/.gradle \
+    --mount=type=cache,id=frontend-konan,target=/root/.konan \
     ./gradlew :frontend:composeApp:wasmJsBrowserDistribution --no-daemon
 
 # ─────────────────────────────────────────────────────────────────────────────

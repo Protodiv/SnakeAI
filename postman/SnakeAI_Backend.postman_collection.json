@@ -400,11 +400,11 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/ws/ai/train",
-              "host": ["{{baseUrl}}"],
+              "raw": "{{wsUrl}}/ws/ai/train",
+              "host": ["{{wsUrl}}"],
               "path": ["ws", "ai", "train"]
             },
-            "description": "## WebSocket Training Session\n\n⚠️ **This is a WebSocket endpoint** — use Postman's **New > WebSocket Request** tab.\n\n**URL**: `ws://localhost:8080/ws/ai/train`\n\n---\n\n### Message 1 — Start Training\n```json\n{\n  \"action\": \"START_TRAINING\",\n  \"modelName\": \"MyTestAgent\",\n  \"fieldSize\": \"MEDIUM\",\n  \"hyperparameters\": {\n    \"maxEpisodes\": 100,\n    \"learningRate\": 0.001,\n    \"batchSize\": 64\n  }\n}\n```\n\n### Message 2 — Stop Training\n```json\n{\n  \"action\": \"STOP\"\n}\n```\n\n### Expected Server Response (every ~200ms while training)\n```json\n{\n  \"metrics\": {\n    \"episode\": 42,\n    \"epsilon\": 0.85,\n    \"loss\": 0.0234,\n    \"averageReward\": 1.5,\n    \"topScore\": 10,\n    \"recentScore\": 7,\n    \"stepsPlayed\": 15000,\n    \"stepsPerSecond\": 312.4,\n    \"elapsedTimeMs\": 48000\n  }\n}\n```\n\n### FieldSize values\n`SMALL` | `MEDIUM` | `LARGE` | `RANDOM`"
+            "description": "## WebSocket Training Session\n\n⚠️ **This is a WebSocket endpoint** — use Postman's **New > WebSocket Request** tab.\n\n**URL**: `{{wsUrl}}/ws/ai/train`\n\n---\n\n### Message 1 — Start Training\n```json\n{\n  \"action\": \"START_TRAINING\",\n  \"modelName\": \"{{modelName}}\",\n  \"fieldSize\": \"MEDIUM\",\n  \"hyperparameters\": {\n    \"maxEpisodes\": 100,\n    \"learningRate\": 0.001,\n    \"batchSize\": 64\n  }\n}\n```\n\n### Message 2 — Stop Training\n```json\n{\n  \"action\": \"STOP\"\n}\n```\n\n### Expected Server Response (every ~200ms while training)\n```json\n{\n  \"type\": \"TRAINING_METRICS\",\n  \"metrics\": {\n    \"episode\": 42,\n    \"epsilon\": 0.85,\n    \"loss\": 0.0234,\n    \"averageReward\": 1.5,\n    \"topScore\": 10,\n    \"recentScore\": 7,\n    \"stepsPlayed\": 15000,\n    \"stepsPerSecond\": 312.4,\n    \"elapsedTimeMs\": 48000\n  },\n  \"gameState\": {\n    \"snake\": [{\"x\": 5, \"y\": 5}, {\"x\": 4, \"y\": 5}],\n    \"food\": {\"x\": 10, \"y\": 7},\n    \"score\": 3,\n    \"status\": \"PLAYING\",\n    \"direction\": \"RIGHT\",\n    \"fieldSize\": \"MEDIUM\"\n  }\n}\n```\n\n### FieldSize values\n`SMALL` | `MEDIUM` | `LARGE` | `RANDOM`"
           },
           "response": []
         }
@@ -429,11 +429,11 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/ws/ai/play",
-              "host": ["{{baseUrl}}"],
+              "raw": "{{wsUrl}}/ws/ai/play",
+              "host": ["{{wsUrl}}"],
               "path": ["ws", "ai", "play"]
             },
-            "description": "## WebSocket Play Session\n\n⚠️ **This is a WebSocket endpoint** — use Postman's **New > WebSocket Request** tab.\n\n**URL**: `ws://localhost:8080/ws/ai/play`\n\n---\n\n### Message 1 — Start Playing\n```json\n{\n  \"action\": \"START\",\n  \"modelName\": \"MyTestAgent\",\n  \"fieldSize\": \"MEDIUM\",\n  \"tickRateMs\": 120\n}\n```\n\n### Message 2 — Pause\n```json\n{ \"action\": \"PAUSE\" }\n```\n\n### Message 3 — Resume\n```json\n{ \"action\": \"RESUME\" }\n```\n\n### Message 4 — Restart\n```json\n{ \"action\": \"RESTART\" }\n```\n\n### Message 5 — Stop\n```json\n{ \"action\": \"STOP\" }\n```\n\n### Expected Server Response (every `tickRateMs` ms)\n```json\n{\n  \"state\": {\n    \"snake\": [{\"x\": 5, \"y\": 5}, {\"x\": 4, \"y\": 5}],\n    \"food\": {\"x\": 10, \"y\": 7},\n    \"score\": 3,\n    \"status\": \"PLAYING\",\n    \"direction\": \"RIGHT\",\n    \"fieldSize\": \"MEDIUM\"\n  },\n  \"decisionMetrics\": {\n    \"dangerStraight\": 0.0,\n    \"dangerLeft\": 1.0,\n    \"dangerRight\": 0.0,\n    \"foodNorth\": 0.0,\n    \"foodEast\": 1.0,\n    \"foodSouth\": 0.0,\n    \"foodWest\": 0.0,\n    \"qValues\": [0.75, -0.3, 0.12],\n    \"selectedAction\": \"STRAIGHT\",\n    \"isExploration\": false,\n    \"epsilon\": 0.01\n  }\n}\n```"
+            "description": "## WebSocket Play Session\n\n⚠️ **This is a WebSocket endpoint** — use Postman's **New > WebSocket Request** tab.\n\n**URL**: `{{wsUrl}}/ws/ai/play`\n\n---\n\n### Message 1 — Start Playing\n```json\n{\n  \"action\": \"START\",\n  \"modelName\": \"{{modelName}}\",\n  \"fieldSize\": \"MEDIUM\",\n  \"tickRateMs\": 120\n}\n```\n\n### Message 2 — Pause\n```json\n{ \"action\": \"PAUSE\" }\n```\n\n### Message 3 — Resume\n```json\n{ \"action\": \"RESUME\" }\n```\n\n### Message 4 — Restart\n```json\n{ \"action\": \"RESTART\" }\n```\n\n### Message 5 — Stop\n```json\n{ \"action\": \"STOP\" }\n```\n\n### Expected Server Response (every `tickRateMs` ms)\n```json\n{\n  \"state\": {\n    \"snake\": [{\"x\": 5, \"y\": 5}, {\"x\": 4, \"y\": 5}],\n    \"food\": {\"x\": 10, \"y\": 7},\n    \"score\": 3,\n    \"status\": \"PLAYING\",\n    \"direction\": \"RIGHT\",\n    \"fieldSize\": \"MEDIUM\"\n  },\n  \"decisionMetrics\": {\n    \"dangerStraight\": 0.0,\n    \"dangerLeft\": 1.0,\n    \"dangerRight\": 0.0,\n    \"foodNorth\": 0.0,\n    \"foodEast\": 1.0,\n    \"foodSouth\": 0.0,\n    \"foodWest\": 0.0,\n    \"qValues\": [0.75, -0.3, 0.12],\n    \"selectedAction\": \"STRAIGHT\",\n    \"isExploration\": false,\n    \"epsilon\": 0.01\n  }\n}\n```"
           },
           "response": []
         }

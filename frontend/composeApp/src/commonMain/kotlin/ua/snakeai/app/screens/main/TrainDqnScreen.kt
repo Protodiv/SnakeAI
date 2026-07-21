@@ -22,7 +22,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -32,15 +31,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import kotlinx.coroutines.flow.collectLatest
 import org.koin.compose.viewmodel.koinViewModel
-import ua.snakeai.app.ui.shared.CyberBackButton
-import ua.snakeai.app.ui.shared.ScanlineOverlay
-import ua.snakeai.app.ui.shared.drawBackgroundCircle
+import ua.snakeai.app.ui.shared.*
 import ua.snakeai.app.ui.theme.cyberColors
 import ua.snakeai.app.ui.theme.spacing
+import ua.snakeai.app.view.game.GameContract
 import ua.snakeai.app.view.train.TrainDqnContract
 import ua.snakeai.app.view.train.TrainDqnViewModel
-import ua.snakeai.contract.FieldSize
-import kotlin.math.pow
 
 @Composable
 fun TrainDqnScene(
@@ -100,27 +96,7 @@ fun TrainDqnScreen(
 
         Column(modifier = Modifier.fillMaxSize()) {
             // Top HUD Bar
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(spacing.xxl)
-                    .background(cyberColors.backgroundStart.copy(alpha = 0.7f))
-                    .drawBehind {
-                        val strokeWidth = 1.dp.toPx()
-                        val y = size.height - strokeWidth / 2
-                        drawLine(
-                            color = cyberColors.glassBorder.copy(alpha = 0.3f),
-                            start = Offset(0f, y),
-                            end = Offset(size.width, y),
-                            strokeWidth = strokeWidth
-                        )
-                    }
-                    .padding(horizontal = spacing.cardPadding),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                CyberBackButton(onClick = onBackClicked)
-
+            CyberHeader(onBackClicked = onBackClicked) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(spacing.md),
                     verticalAlignment = Alignment.CenterVertically
@@ -140,7 +116,7 @@ fun TrainDqnScreen(
                 }
             }
 
-            // Main Content Area: Splits into Hyperparameters Form (left) and Logs Terminal (right)
+            // Main Content Area: Splits into Left (Game Arena & Console logs) and Right (Agent Config & Metrics)
             Row(
                 modifier = Modifier
                     .weight(1f)
@@ -148,10 +124,92 @@ fun TrainDqnScreen(
                     .padding(spacing.cardPadding),
                 horizontalArrangement = Arrangement.spacedBy(spacing.cardPadding)
             ) {
-                // Left: Configuration & Real-Time Stats Panel
+                // Left Column: Game Arena (top) + Console Log (bottom)
                 Column(
                     modifier = Modifier
-                        .weight(0.9f)
+                        .weight(0.62f)
+                        .fillMaxHeight(),
+                    verticalArrangement = Arrangement.spacedBy(spacing.md)
+                ) {
+                    // Game Arena
+                    GameArenaContainer(
+                        state = state.gameState ?: GameContract.State(),
+                        protocolText = "Protocol: DQN_Training",
+                        agentNameText = "Agent: ${state.modelName}",
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                    )
+
+                    // Terminal Logging Console
+                    Box(
+                        modifier = Modifier
+                            .weight(0.42f)
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(spacing.md))
+                            .background(cyberColors.backgroundStart.copy(alpha = 0.95f))
+                            .border(1.dp, cyberColors.glassBorder, RoundedCornerShape(spacing.md))
+                            .padding(spacing.cardPadding)
+                    ) {
+                        Column(modifier = Modifier.fillMaxSize()) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(bottom = spacing.xs),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "TRAINING LOG CONSOLE",
+                                    color = cyberColors.textSecondary,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = "Clear logs",
+                                    tint = cyberColors.textSecondary.copy(alpha = 0.7f),
+                                    modifier = Modifier
+                                        .size(18.dp)
+                                        .clickable { onEvent(TrainDqnContract.Event.OnClearLogsClicked) }
+                                )
+                            }
+
+                            Divider(color = cyberColors.glassBorder.copy(alpha = 0.3f), thickness = 1.dp)
+
+                            Spacer(modifier = Modifier.height(spacing.xs))
+
+                            LazyColumn(
+                                state = lazyListState,
+                                modifier = Modifier.weight(1f).fillMaxWidth(),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                if (state.logs.isEmpty()) {
+                                    item {
+                                        Text(
+                                            text = ">> Console idle. Awaiting training initialization...",
+                                            color = cyberColors.textSecondary.copy(alpha = 0.5f),
+                                            fontFamily = FontFamily.Monospace,
+                                            fontSize = 11.sp
+                                        )
+                                    }
+                                } else {
+                                    items(state.logs) { log ->
+                                        Text(
+                                            text = log,
+                                            color = if (log.contains("ERROR")) cyberColors.snakeHead else cyberColors.apple,
+                                            fontFamily = FontFamily.Monospace,
+                                            fontSize = 11.sp
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Right Column: Configuration & Real-Time Stats Panel
+                Column(
+                    modifier = Modifier
+                        .weight(0.38f)
                         .fillMaxHeight(),
                     verticalArrangement = Arrangement.spacedBy(spacing.md)
                 ) {
@@ -169,16 +227,16 @@ fun TrainDqnScreen(
                             modifier = Modifier.fillMaxSize(),
                             verticalArrangement = Arrangement.SpaceBetween
                         ) {
-                                            Text(
+                            Text(
                                 text = "AGENT CONFIGURATION",
                                 color = cyberColors.highlightStart,
-                                fontSize = 14.sp,
+                                fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold
                             )
 
                             // Model Name Input
-                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Text("Model Name:", color = cyberColors.textSecondary, fontSize = 11.sp)
+                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text("Model Name:", color = cyberColors.textSecondary, fontSize = 10.sp)
                                 OutlinedTextField(
                                     value = state.modelName,
                                     onValueChange = { onEvent(TrainDqnContract.Event.OnModelNameChanged(it)) },
@@ -196,21 +254,21 @@ fun TrainDqnScreen(
                                     ),
                                     shape = RoundedCornerShape(4.dp),
                                     singleLine = true,
-                                    modifier = Modifier.fillMaxWidth().height(48.dp)
+                                    modifier = Modifier.fillMaxWidth().height(52.dp)
                                 )
                             }
 
-                            // Learning Rate selector
+                             // Learning Rate selector
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text("Learning Rate:", color = cyberColors.textSecondary, fontSize = 12.sp)
-                                Row(horizontalArrangement = Arrangement.spacedBy(spacing.xs)) {
-                                    listOf(0.001, 0.0005, 0.0001).forEach { lr ->
+                                Text("Learning Rate:", color = cyberColors.textSecondary, fontSize = 11.sp)
+                                Row(horizontalArrangement = Arrangement.spacedBy(spacing.xxs)) {
+                                    state.availableLearningRates.forEach { lr ->
                                         HyperparameterChoiceChip(
-                                            text = lr.toString(),
+                                            text = formatDouble(lr, 4),
                                             isSelected = state.hyperparameters.learningRate == lr,
                                             isEnabled = !state.isTraining,
                                             cyberColors = cyberColors
@@ -227,9 +285,9 @@ fun TrainDqnScreen(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text("Batch Size:", color = cyberColors.textSecondary, fontSize = 12.sp)
-                                Row(horizontalArrangement = Arrangement.spacedBy(spacing.xs)) {
-                                    listOf(32, 64, 128).forEach { size ->
+                                Text("Batch Size:", color = cyberColors.textSecondary, fontSize = 11.sp)
+                                Row(horizontalArrangement = Arrangement.spacedBy(spacing.xxs)) {
+                                    state.availableBatchSizes.forEach { size ->
                                         HyperparameterChoiceChip(
                                             text = size.toString(),
                                             isSelected = state.hyperparameters.batchSize == size,
@@ -237,27 +295,6 @@ fun TrainDqnScreen(
                                             cyberColors = cyberColors
                                         ) {
                                             onEvent(TrainDqnContract.Event.OnHyperparametersChanged(state.hyperparameters.copy(batchSize = size)))
-                                        }
-                                    }
-                                }
-                            }
-
-                            // Grid Size selector
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text("Arena Grid Size:", color = cyberColors.textSecondary, fontSize = 12.sp)
-                                Row(horizontalArrangement = Arrangement.spacedBy(spacing.xs)) {
-                                    listOf(FieldSize.SMALL, FieldSize.MEDIUM, FieldSize.LARGE).forEach { size ->
-                                        HyperparameterChoiceChip(
-                                            text = size.name,
-                                            isSelected = state.fieldSize == size,
-                                            isEnabled = !state.isTraining,
-                                            cyberColors = cyberColors
-                                        ) {
-                                            onEvent(TrainDqnContract.Event.OnFieldSizeChanged(size))
                                         }
                                     }
                                 }
@@ -276,18 +313,20 @@ fun TrainDqnScreen(
                                     containerColor = if (state.isTraining) cyberColors.snakeHead else cyberColors.highlightStart
                                 ),
                                 shape = RoundedCornerShape(spacing.xs),
-                                modifier = Modifier.fillMaxWidth().height(42.dp)
+                                modifier = Modifier.fillMaxWidth().height(38.dp)
                             ) {
                                 Icon(
                                     imageVector = if (state.isTraining) Icons.Default.Stop else Icons.Default.ModelTraining,
                                     contentDescription = "Train Control",
-                                    tint = if (state.isTraining) Color.White else cyberColors.backgroundStart
+                                    tint = if (state.isTraining) Color.White else cyberColors.backgroundStart,
+                                    modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(modifier = Modifier.width(spacing.xs))
                                 Text(
                                     text = if (state.isTraining) "STOP TRAINING" else "EVOLVE AGENT",
                                     color = if (state.isTraining) Color.White else cyberColors.backgroundStart,
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.sp
                                 )
                             }
                         }
@@ -310,7 +349,7 @@ fun TrainDqnScreen(
                             Text(
                                 text = "REAL-TIME METRICS",
                                 color = cyberColors.highlightStart,
-                                fontSize = 14.sp,
+                                fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold
                             )
 
@@ -334,70 +373,6 @@ fun TrainDqnScreen(
                         }
                     }
                 }
-
-                // Right: Terminal Logging Console
-                Box(
-                    modifier = Modifier
-                        .weight(1.1f)
-                        .fillMaxHeight()
-                        .clip(RoundedCornerShape(spacing.md))
-                        .background(cyberColors.backgroundStart.copy(alpha = 0.95f))
-                        .border(1.dp, cyberColors.glassBorder, RoundedCornerShape(spacing.md))
-                        .padding(spacing.cardPadding)
-                ) {
-                    Column(modifier = Modifier.fillMaxSize()) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(bottom = spacing.xs),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "TRAINING LOG CONSOLE",
-                                color = cyberColors.textSecondary,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Icon(
-                                imageVector = Icons.Default.Delete,
-                                contentDescription = "Clear logs",
-                                tint = cyberColors.textSecondary.copy(alpha = 0.7f),
-                                modifier = Modifier
-                                    .size(18.dp)
-                                    .clickable { onEvent(TrainDqnContract.Event.OnClearLogsClicked) }
-                            )
-                        }
-
-                        Divider(color = cyberColors.glassBorder.copy(alpha = 0.3f), thickness = 1.dp)
-
-                        Spacer(modifier = Modifier.height(spacing.xs))
-
-                        LazyColumn(
-                            state = lazyListState,
-                            modifier = Modifier.weight(1f).fillMaxWidth(),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            if (state.logs.isEmpty()) {
-                                item {
-                                    Text(
-                                        text = ">> Console idle. Awaiting training initialization...",
-                                        color = cyberColors.textSecondary.copy(alpha = 0.5f),
-                                        fontFamily = FontFamily.Monospace,
-                                        fontSize = 11.sp
-                                    )
-                                }
-                            } else {
-                                items(state.logs) { log ->
-                                    Text(
-                                        text = log,
-                                        color = if (log.contains("ERROR")) cyberColors.snakeHead else cyberColors.apple,
-                                        fontFamily = FontFamily.Monospace,
-                                        fontSize = 11.sp
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
             }
         }
 
@@ -410,66 +385,3 @@ fun TrainDqnScreen(
     }
 }
 
-@Composable
-fun HyperparameterChoiceChip(
-    text: String,
-    isSelected: Boolean,
-    isEnabled: Boolean,
-    cyberColors: ua.snakeai.app.ui.theme.CyberColors,
-    onClick: () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .height(28.dp)
-            .clip(RoundedCornerShape(4.dp))
-            .background(
-                if (isSelected) cyberColors.highlightStart.copy(alpha = 0.2f)
-                else cyberColors.backgroundStart
-            )
-            .border(
-                1.dp,
-                if (isSelected) cyberColors.highlightStart
-                else cyberColors.glassBorder.copy(alpha = 0.5f),
-                RoundedCornerShape(4.dp)
-            )
-            .clickable(enabled = isEnabled) { onClick() }
-            .padding(horizontal = MaterialTheme.spacing.xs),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = text,
-            color = if (isSelected) cyberColors.highlightStart else if (isEnabled) Color.White else cyberColors.textSecondary.copy(alpha = 0.5f),
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Bold
-        )
-    }
-}
-
-@Composable
-fun MetricBox(label: String, value: String, accentColor: Color, modifier: Modifier = Modifier) {
-    val cyberColors = MaterialTheme.cyberColors
-    Box(
-        modifier = modifier
-            .height(64.dp)
-            .clip(RoundedCornerShape(4.dp))
-            .background(cyberColors.backgroundStart)
-            .border(1.dp, cyberColors.glassBorder.copy(alpha = 0.4f), RoundedCornerShape(4.dp))
-            .padding(8.dp)
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.SpaceBetween,
-            horizontalAlignment = Alignment.Start
-        ) {
-            Text(text = label, color = cyberColors.textSecondary, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-            Text(text = value, color = accentColor, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-        }
-    }
-}
-
-private fun formatDouble(value: Double, decimals: Int): String {
-    if (value.isNaN() || value.isInfinite()) return "0.0"
-    val factor = 10.0.pow(decimals)
-    val rounded = kotlin.math.round(value * factor) / factor
-    return rounded.toString()
-}

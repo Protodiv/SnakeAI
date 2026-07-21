@@ -3,6 +3,7 @@ package ua.snakeai.backend.handler
 import kotlinx.coroutines.*
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.encodeToString
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.socket.WebSocketHandler
@@ -21,7 +22,12 @@ class AiPlayWebSocketHandler(
 
     private val json = Json { ignoreUnknownKeys = true }
 
+    companion object {
+        private val logger = LoggerFactory.getLogger(AiPlayWebSocketHandler::class.java)
+    }
+
     override fun handle(session: WebSocketSession): Mono<Void> {
+        logger.info("New AI Play WebSocket session initiated. ID: ${session.id}, URI: ${session.handshakeInfo.uri}")
         val sessionJob = Job()
         val scope = CoroutineScope(Dispatchers.Default + sessionJob)
 
@@ -34,11 +40,13 @@ class AiPlayWebSocketHandler(
 
             session.receive()
                 .doOnTerminate {
+                    logger.info("AI Play WebSocket receive flow terminated. ID: ${session.id}")
                     sessionJob.cancel()
                 }
                 .subscribe { webSocketMessage ->
                     try {
                         val payload = webSocketMessage.payloadAsText
+                        logger.info("AI Play WS [ID: ${session.id}] received: $payload")
                         val cmd = json.decodeFromString<PlayCommand>(payload)
                         when (cmd.action) {
                             "START" -> {
@@ -81,7 +89,7 @@ class AiPlayWebSocketHandler(
                             }
                         }
                     } catch (e: Exception) {
-                        e.printStackTrace()
+                        logger.error("Error processing play WS message [ID: ${session.id}]", e)
                     }
                 }
 
@@ -136,7 +144,8 @@ class AiPlayWebSocketHandler(
         }
 
         return Mono.never<Void>()
-            .doFinally {
+            .doFinally { signalType ->
+                logger.info("AI Play WebSocket connection closed. ID: ${session.id}, Signal: $signalType")
                 sessionJob.cancel()
             }
     }

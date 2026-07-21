@@ -63,7 +63,8 @@ data class TrainingProgressMetrics(
 @Serializable
 data class TrainingMetricsFrame(
     val type: String = "TRAINING_METRICS",
-    val metrics: TrainingProgressMetrics
+    val metrics: TrainingProgressMetrics,
+    val gameState: GameState? = null
 )
 
 @Serializable

@@ -20,21 +20,21 @@ COPY contract/ contract/
 RUN dos2unix gradlew && chmod +x gradlew
 
 # ── Step 2: Pre-download all dependencies (cached mount + layer cache) ─────────
-RUN --mount=type=cache,target=/root/.gradle \
+RUN --mount=type=cache,id=backend-gradle,target=/root/.gradle \
     ./gradlew :backend:dependencies --no-daemon --quiet
 
 # ── Step 3: Copy source and build ─────────────────────────────────────────────
 COPY backend/src/ backend/src/
 
-RUN --mount=type=cache,target=/root/.gradle \
+RUN --mount=type=cache,id=backend-gradle,target=/root/.gradle \
     ./gradlew :backend:bootJar --no-daemon --parallel --build-cache
 
 # Stage 2: Runtime image
-FROM amazoncorretto:21-alpine
+FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
 
-# Install system package libgomp required for ND4J CPU native execution
-RUN apk add --no-cache libgomp
+# Install system package libgomp1 required for ND4J CPU native execution
+RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /workspace/backend/build/libs/*.jar app.jar
 EXPOSE 8080
