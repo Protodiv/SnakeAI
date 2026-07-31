@@ -1,152 +1,103 @@
 package ua.snakeai.backend.handler
 
 import kotlinx.coroutines.*
-import kotlinx.serialization.json.Json
+import kotlinx.coroutines.reactive.asFlow
 import kotlinx.serialization.encodeToString
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
-import org.springframework.web.reactive.socket.WebSocketHandler
 import org.springframework.web.reactive.socket.WebSocketSession
 import reactor.core.publisher.Mono
 import ua.snakeai.backend.ai.DqnAgent
 import ua.snakeai.backend.ai.SnakeEnv
 import ua.snakeai.contract.*
-import java.io.File
 import kotlin.random.Random
+import kotlin.time.Duration.Companion.milliseconds
 
 @Component
 class AiPlayWebSocketHandler(
-    @Value("\${model.storage.path:models}") private val modelStoragePath: String
-) : WebSocketHandler {
+    @Value("\${model.storage.path:models}") modelStoragePath: String
+) : BaseAiWebSocketHandler(modelStoragePath, LoggerFactory.getLogger(AiPlayWebSocketHandler::class.java)) {
 
-    private val json = Json { ignoreUnknownKeys = true }
-
-    companion object {
-        private val logger = LoggerFactory.getLogger(AiPlayWebSocketHandler::class.java)
-    }
-
-    override fun handle(session: WebSocketSession): Mono<Void> {
-        logger.info("New AI Play WebSocket session initiated. ID: ${session.id}, URI: ${session.handshakeInfo.uri}")
-        val sessionJob = Job()
-        val scope = CoroutineScope(Dispatchers.Default + sessionJob)
+    override suspend fun handleSession(session: WebSocketSession, scope: CoroutineScope) {
+        var isRunning = false
+        var isPaused = false
+        var gameState: GameState? = null
+        var agent: DqnAgent? = null
+        var tickRateMs = 120L
 
         scope.launch {
-            var isRunning = false
-            var isPaused = false
-            var gameState: GameState? = null
-            var agent: DqnAgent? = null
-            var tickRateMs = 120L
-
-            session.receive()
-                .doOnTerminate {
-                    logger.info("AI Play WebSocket receive flow terminated. ID: ${session.id}")
-                    sessionJob.cancel()
-                }
-                .subscribe { webSocketMessage ->
-                    try {
+            try {
+                session.receive()
+                    .asFlow()
+                    .collect { webSocketMessage ->
                         val payload = webSocketMessage.payloadAsText
-                        logger.info("AI Play WS [ID: ${session.id}] received: $payload")
-                        val cmd = json.decodeFromString<PlayCommand>(payload)
-                        when (cmd.action) {
-                            "START" -> {
+                        log.info("AI Play WS [ID: ${session.id}] received: $payload")
+                        when (val cmd = json.decodeFromString<PlayCommand>(payload)) {
+                            is PlayCommand.Start -> {
                                 val modelName = cmd.modelName ?: "default_agent"
-                                val size = cmd.fieldSize ?: FieldSize.MEDIUM
-                                val actualSize = if (size == FieldSize.RANDOM) {
-                                    listOf(FieldSize.SMALL, FieldSize.MEDIUM, FieldSize.LARGE).random()
-                                } else size
-
+                                val actualSize = resolveFieldSize(cmd.fieldSize)
                                 tickRateMs = cmd.tickRateMs ?: 120L
 
-                                val modelsDir = File(modelStoragePath)
-                                if (!modelsDir.exists()) modelsDir.mkdirs()
-                                val modelFile = File(modelsDir, "$modelName.zip")
-                                agent = if (modelFile.exists()) {
-                                    DqnAgent(modelName, modelFile)
-                                } else {
-                                    DqnAgent(modelName)
-                                }
-
+                                agent = loadOrCreateAgent(modelName)
                                 gameState = GameEngine.initGame(actualSize, 4, Direction.RIGHT, Random.Default)
-                                gameState = gameState?.copy(status = GameStatus.PLAYING)
+                                    .copy(status = GameStatus.PLAYING)
+
                                 isRunning = true
                                 isPaused = false
                             }
-                            "PAUSE" -> {
+                            is PlayCommand.Pause -> {
                                 isPaused = true
                             }
-                            "RESUME" -> {
+                            is PlayCommand.Resume -> {
                                 isPaused = false
                             }
-                            "RESTART" -> {
-                                val size = gameState?.fieldSize ?: FieldSize.MEDIUM
+                            is PlayCommand.Restart -> {
+                                val size = gameState?.fieldSize ?: FieldSize.RANDOM
                                 gameState = GameEngine.initGame(size, 4, Direction.RIGHT, Random.Default)
-                                gameState = gameState?.copy(status = GameStatus.PLAYING)
+                                    .copy(status = GameStatus.PLAYING)
                                 isPaused = false
                             }
-                            "STOP" -> {
+                            is PlayCommand.Stop -> {
                                 isRunning = false
                             }
                         }
-                    } catch (e: Exception) {
-                        logger.error("Error processing play WS message [ID: ${session.id}]", e)
                     }
-                }
-
-            // Play Game Loop
-            while (isActive) {
-                if (isRunning && !isPaused && gameState != null && agent != null) {
-                    val currentGameState = gameState!!
-                    if (currentGameState.status == GameStatus.PLAYING) {
-                        // 1. Generate observation features
-                        val obs = SnakeEnv.getObservation(currentGameState)
-
-                        // 2. Select action (no exploration during show play)
-                        val (action, isExploration) = agent!!.selectAction(obs, explore = false)
-
-                        // 3. Map action to absolute direction
-                        val nextDir = SnakeEnv.getAbsoluteDirection(currentGameState.direction, action)
-
-                        // 4. Tick the shared engine
-                        val nextGameState = GameEngine.step(currentGameState, nextDir)
-                        gameState = nextGameState
-
-                        // 5. Send frame update
-                        val qValues = agent!!.getQValues(obs).toList()
-                        val metrics = DecisionMetrics(
-                            dangerStraight = obs[0],
-                            dangerLeft = obs[1],
-                            dangerRight = obs[2],
-                            foodNorth = obs[7],
-                            foodEast = obs[8],
-                            foodSouth = obs[9],
-                            foodWest = obs[10],
-                            qValues = qValues,
-                            selectedAction = when (action) {
-                                0 -> "STRAIGHT"
-                                1 -> "TURN_LEFT"
-                                2 -> "TURN_RIGHT"
-                                else -> "STRAIGHT"
-                            },
-                            isExploration = isExploration,
-                            epsilon = agent!!.epsilon
-                        )
-                        val frame = GameFrame(state = nextGameState, decisionMetrics = metrics)
-                        val jsonStr = json.encodeToString(frame)
-
-                        session.send(Mono.just(session.textMessage(jsonStr))).subscribe()
-                    }
-                    delay(tickRateMs)
-                } else {
-                    delay(100L)
-                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                log.error("Error consuming client commands [ID: ${session.id}]", e)
             }
         }
 
-        return Mono.never<Void>()
-            .doFinally { signalType ->
-                logger.info("AI Play WebSocket connection closed. ID: ${session.id}, Signal: $signalType")
-                sessionJob.cancel()
+        // Play Game Loop
+        while (scope.isActive) {
+            if (isRunning && !isPaused && gameState != null && agent != null) {
+                val currentGameState = gameState!!
+                if (currentGameState.status == GameStatus.PLAYING) {
+                    val obs = SnakeEnv.getObservation(currentGameState)
+                    val (action, isExploration) = agent!!.selectAction(obs, explore = false)
+                    val nextDir = SnakeEnv.getAbsoluteDirection(currentGameState.direction, action)
+                    val nextGameState = GameEngine.step(currentGameState, nextDir)
+                    gameState = nextGameState
+
+                    val qValues = agent!!.getQValues(obs)
+                    val metrics = createDecisionMetrics(
+                        obs = obs,
+                        action = action,
+                        isExploration = isExploration,
+                        epsilon = agent!!.epsilon,
+                        qValues = qValues
+                    )
+                    val frame = GameFrame(state = nextGameState, decisionMetrics = metrics)
+                    val jsonStr = json.encodeToString(frame)
+
+                    session.send(Mono.just(session.textMessage(jsonStr))).subscribe()
+                }
+                delay(tickRateMs.milliseconds)
+            } else {
+                delay(100L.milliseconds)
             }
+        }
     }
 }

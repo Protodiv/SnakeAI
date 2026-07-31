@@ -5,12 +5,15 @@ services:
       dockerfile: backend/Dockerfile
     ports:
       - "8080:8080"
+      - "8082:8082"
+      - "9092:9092"
     volumes:
       - model_data:/app/models
       - db_data:/app/db
     environment:
       - MODEL_STORAGE_PATH=/app/models
       - DATABASE_PATH=/app/db/snakeai
+      - SPRING_PROFILES_ACTIVE=dev
 
   frontend-web:
     build:

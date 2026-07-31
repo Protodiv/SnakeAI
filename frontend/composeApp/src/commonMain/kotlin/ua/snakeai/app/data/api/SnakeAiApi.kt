@@ -38,8 +38,7 @@ class SnakeAiApi(
         tickRateMs: Long
     ): Flow<GameFrame> = flow {
         httpClient.webSocket(host = serverHost, port = serverPort.toInt(), path = "/ws/ai/play") {
-            val startCmd = PlayCommand(
-                action = "START",
+            val startCmd: PlayCommand = PlayCommand.Start(
                 modelName = modelName,
                 fieldSize = fieldSize,
                 tickRateMs = tickRateMs
@@ -62,8 +61,7 @@ class SnakeAiApi(
         hyperparameters: TrainHyperparameters
     ): Flow<TrainingMetricsFrame> = flow {
         httpClient.webSocket(host = serverHost, port = serverPort.toInt(), path = "/ws/ai/train") {
-            val startCmd = TrainCommand(
-                action = "START_TRAINING",
+            val startCmd: TrainCommand = TrainCommand.Start(
                 modelName = modelName,
                 fieldSize = fieldSize,
                 hyperparameters = hyperparameters

@@ -1,14 +1,42 @@
 package ua.snakeai.contract
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonClassDiscriminator
+import kotlinx.serialization.SerialName
 
 @Serializable
-data class PlayCommand(
-    val action: String, // START, PAUSE, RESUME, RESTART, STOP
-    val modelName: String? = null,
-    val fieldSize: FieldSize? = null,
-    val tickRateMs: Long? = null
-)
+@JsonClassDiscriminator("action")
+sealed interface PlayCommand {
+    @Serializable
+    @SerialName("START")
+    data class Start(
+        val modelName: String? = null,
+        val fieldSize: FieldSize? = null,
+        val tickRateMs: Long? = null
+    ) : PlayCommand
+
+    @Serializable
+    @SerialName("PAUSE")
+    data object Pause : PlayCommand
+
+    @Serializable
+    @SerialName("RESUME")
+    data object Resume : PlayCommand
+
+    @Serializable
+    @SerialName("RESTART")
+    data object Restart : PlayCommand
+
+    @Serializable
+    @SerialName("STOP")
+    data object Stop : PlayCommand
+}
+
+object Actions {
+    const val STRAIGHT = "STRAIGHT"
+    const val TURN_LEFT = "TURN_LEFT"
+    const val TURN_RIGHT = "TURN_RIGHT"
+}
 
 @Serializable
 data class DecisionMetrics(
@@ -40,12 +68,20 @@ data class TrainHyperparameters(
 )
 
 @Serializable
-data class TrainCommand(
-    val action: String, // START_TRAINING, STOP
-    val modelName: String? = null,
-    val fieldSize: FieldSize? = null,
-    val hyperparameters: TrainHyperparameters? = null
-)
+@JsonClassDiscriminator("action")
+sealed interface TrainCommand {
+    @Serializable
+    @SerialName("START_TRAINING")
+    data class Start(
+        val modelName: String? = null,
+        val fieldSize: FieldSize? = null,
+        val hyperparameters: TrainHyperparameters? = null
+    ) : TrainCommand
+
+    @Serializable
+    @SerialName("STOP")
+    data object Stop : TrainCommand
+}
 
 @Serializable
 data class TrainingProgressMetrics(
