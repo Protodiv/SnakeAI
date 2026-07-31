@@ -8,6 +8,7 @@ import ua.snakeai.contract.Coordinate
 import ua.snakeai.contract.Direction
 import ua.snakeai.contract.FieldSize
 import ua.snakeai.contract.GameStatus
+import ua.snakeai.contract.GameState
 
 interface GameContract {
     @Immutable
@@ -37,3 +38,18 @@ interface GameContract {
         data class ShowSnackBar(val message: String) : Effect
     }
 }
+
+fun GameState.toGameContractState(topScore: Int): GameContract.State {
+    return GameContract.State(
+        score = this.score,
+        topScore = topScore,
+        steps = this.steps,
+        status = this.status,
+        direction = this.direction,
+        fieldSize = this.fieldSize,
+        selectedFieldSize = this.fieldSize,
+        snake = this.snake,
+        food = this.food
+    )
+}
+

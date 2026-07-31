@@ -18,6 +18,7 @@ import ua.snakeai.app.navigation.NavigationRoute.MainRoute
 import ua.snakeai.app.screens.main.MainMenuScene
 import ua.snakeai.app.screens.main.PlayManualScene
 import ua.snakeai.app.screens.main.TrainDqnScene
+import ua.snakeai.app.screens.main.PlayAiScene
 
 @Composable
 fun SnakeAiApp(
@@ -41,12 +42,7 @@ fun SnakeAiApp(
                 TrainDqnScene(navigator = navController)
             }
             composable(route = MainRoute.PlayAiScreen.route) {
-                Box(
-                    modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("Play AI Showcase (Placeholder)", color = MaterialTheme.colorScheme.onBackground)
-                }
+                PlayAiScene(navigator = navController)
             }
         }
     }

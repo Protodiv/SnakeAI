@@ -10,8 +10,7 @@ import kotlinx.coroutines.launch
 import ua.snakeai.app.core.mvi.BaseViewModel
 import ua.snakeai.app.data.repository.SnakeAiRepository
 import ua.snakeai.app.ui.shared.formatDouble
-import ua.snakeai.app.view.game.GameContract
-import ua.snakeai.contract.GameState
+import ua.snakeai.app.view.game.toGameContractState
 import ua.snakeai.contract.TrainingProgressMetrics
 
 class TrainDqnViewModel(
@@ -131,21 +130,6 @@ class TrainDqnViewModel(
                 "Steps/s = $spsStr"
     }
 
-
-
-    private fun GameState.toGameContractState(topScore: Int): GameContract.State {
-        return GameContract.State(
-            score = this.score,
-            topScore = topScore,
-            steps = this.steps,
-            status = this.status,
-            direction = this.direction,
-            fieldSize = this.fieldSize,
-            selectedFieldSize = this.fieldSize,
-            snake = this.snake,
-            food = this.food
-        )
-    }
 
     override fun onCleared() {
         super.onCleared()
