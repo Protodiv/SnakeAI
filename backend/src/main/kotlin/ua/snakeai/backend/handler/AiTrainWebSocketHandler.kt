@@ -21,12 +21,6 @@ import java.time.format.DateTimeFormatter
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.random.Random
 
-data class CompletedEpisode(
-    val episodeNumber: Int,
-    val metrics: TrainingProgressMetrics,
-    val states: List<GameState>
-)
-
 @Component
 class AiTrainWebSocketHandler(
     private val repository: TrainedModelRepository,
@@ -285,4 +279,10 @@ class AiTrainWebSocketHandler(
                 sessionJob.cancel()
             }
     }
+
+    data class CompletedEpisode(
+        val episodeNumber: Int,
+        val metrics: TrainingProgressMetrics,
+        val states: List<GameState>
+    )
 }

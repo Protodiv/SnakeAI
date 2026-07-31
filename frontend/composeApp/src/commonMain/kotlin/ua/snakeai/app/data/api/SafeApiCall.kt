@@ -21,7 +21,7 @@ suspend fun <T> safeApiCall(
         } catch (e: ApiException.Timeout) {
             AppResult.Error(CommonError.ServerUnavailable)
         } catch (_: ApiException) {
-            AppResult.Error(CommonError.Unknown)
+            AppResult.Error(CommonError.Unknown())
         }
     }
 }

@@ -9,6 +9,7 @@ import ua.snakeai.app.data.repository.SnakeAiRepository
 import ua.snakeai.app.view.main.mainmenu.MainMenuViewModel
 import ua.snakeai.app.view.game.GameViewModel
 import ua.snakeai.app.view.train.TrainDqnViewModel
+import ua.snakeai.app.view.playai.PlayAiViewModel
 
 val applicationModule = module {
     single { SnakeAiApi(get(), get(), get(named("ServerHost")), get(named("ServerPort"))) }
@@ -16,4 +17,5 @@ val applicationModule = module {
     viewModel { MainMenuViewModel(get()) }
     viewModel { GameViewModel(get()) }
     viewModel { TrainDqnViewModel(get()) }
+    viewModel { PlayAiViewModel(get()) }
 }

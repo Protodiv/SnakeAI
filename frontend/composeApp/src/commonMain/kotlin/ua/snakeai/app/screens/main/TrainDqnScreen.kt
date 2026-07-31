@@ -75,13 +75,6 @@ fun TrainDqnScreen(
         }
     }
 
-    // Auto-scroll the terminal logs as they arrive
-    LaunchedEffect(state.logs.size) {
-        if (state.logs.isNotEmpty()) {
-            lazyListState.animateScrollToItem(state.logs.size - 1)
-        }
-    }
-
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -148,68 +141,16 @@ fun TrainDqnScreen(
                     )
 
                     // Terminal Logging Console
-                    Box(
+                    ConsoleLogPanel(
+                        logs = state.logs,
+                        placeholderText = ">> Console idle. Awaiting training initialization...",
+                        title = "TRAINING LOG CONSOLE",
+                        onClearLogsClicked = { onEvent(TrainDqnContract.Event.OnClearLogsClicked) },
+                        lazyListState = lazyListState,
                         modifier = Modifier
                             .weight(0.42f)
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(spacing.md))
-                            .background(cyberColors.backgroundStart.copy(alpha = 0.95f))
-                            .border(1.dp, cyberColors.glassBorder, RoundedCornerShape(spacing.md))
-                            .padding(spacing.cardPadding)
-                    ) {
-                        Column(modifier = Modifier.fillMaxSize()) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(bottom = spacing.xs),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = "TRAINING LOG CONSOLE",
-                                    color = cyberColors.textSecondary,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = "Clear logs",
-                                    tint = cyberColors.textSecondary.copy(alpha = 0.7f),
-                                    modifier = Modifier
-                                        .size(18.dp)
-                                        .clickable { onEvent(TrainDqnContract.Event.OnClearLogsClicked) }
-                                )
-                            }
-
-                            Divider(color = cyberColors.glassBorder.copy(alpha = 0.3f), thickness = 1.dp)
-
-                            Spacer(modifier = Modifier.height(spacing.xs))
-
-                            LazyColumn(
-                                state = lazyListState,
-                                modifier = Modifier.weight(1f).fillMaxWidth(),
-                                verticalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                if (state.logs.isEmpty()) {
-                                    item {
-                                        Text(
-                                            text = ">> Console idle. Awaiting training initialization...",
-                                            color = cyberColors.textSecondary.copy(alpha = 0.5f),
-                                            fontFamily = FontFamily.Monospace,
-                                            fontSize = 11.sp
-                                        )
-                                    }
-                                } else {
-                                    items(state.logs) { log ->
-                                        Text(
-                                            text = log,
-                                            color = if (log.contains("ERROR")) cyberColors.snakeHead else cyberColors.apple,
-                                            fontFamily = FontFamily.Monospace,
-                                            fontSize = 11.sp
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    )
                 }
 
                 // Right Column: Configuration & Real-Time Stats Panel
@@ -241,28 +182,11 @@ fun TrainDqnScreen(
                             )
 
                             // Model Name Input
-                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                Text("Model Name:", color = cyberColors.textSecondary, fontSize = 10.sp)
-                                OutlinedTextField(
-                                    value = state.modelName,
-                                    onValueChange = { onEvent(TrainDqnContract.Event.OnModelNameChanged(it)) },
-                                    enabled = !state.isTraining,
-                                    colors = OutlinedTextFieldDefaults.colors(
-                                        focusedTextColor = Color.White,
-                                        unfocusedTextColor = Color.White,
-                                        disabledTextColor = Color.White.copy(alpha = 0.5f),
-                                        focusedBorderColor = cyberColors.highlightStart,
-                                        unfocusedBorderColor = cyberColors.glassBorder,
-                                        disabledBorderColor = cyberColors.glassBorder.copy(alpha = 0.5f),
-                                        focusedContainerColor = cyberColors.backgroundStart,
-                                        unfocusedContainerColor = cyberColors.backgroundStart,
-                                        disabledContainerColor = cyberColors.backgroundStart.copy(alpha = 0.5f)
-                                    ),
-                                    shape = RoundedCornerShape(4.dp),
-                                    singleLine = true,
-                                    modifier = Modifier.fillMaxWidth().height(52.dp)
-                                )
-                            }
+                            ModelNameInput(
+                                value = state.modelName,
+                                onValueChange = { onEvent(TrainDqnContract.Event.OnModelNameChanged(it)) },
+                                enabled = !state.isTraining
+                            )
 
                              // Learning Rate selector
                             Row(
