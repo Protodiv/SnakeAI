@@ -22,6 +22,7 @@ interface PlayAiContract {
     sealed interface Event : UiEvent {
         data object OnStartClicked : Event
         data object OnStopClicked : Event
+        data object OnRestartClicked : Event
         data class OnAgentNameChanged(val name: String) : Event
         data class OnAgentSelected(val agent: TrainedAiModel) : Event
         data object OnClearLogsClicked : Event

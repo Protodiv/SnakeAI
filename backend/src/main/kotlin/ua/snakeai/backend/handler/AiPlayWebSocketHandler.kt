@@ -29,9 +29,9 @@ class AiPlayWebSocketHandler(
         scope.launch {
             try {
                 session.receive()
+                    .map { it.payloadAsText }
                     .asFlow()
-                    .collect { webSocketMessage ->
-                        val payload = webSocketMessage.payloadAsText
+                    .collect { payload ->
                         log.info("AI Play WS [ID: ${session.id}] received: $payload")
                         when (val cmd = json.decodeFromString<PlayCommand>(payload)) {
                             is PlayCommand.Start -> {
@@ -92,7 +92,7 @@ class AiPlayWebSocketHandler(
                     val frame = GameFrame(state = nextGameState, decisionMetrics = metrics)
                     val jsonStr = json.encodeToString(frame)
 
-                    session.send(Mono.just(session.textMessage(jsonStr))).subscribe()
+                    sendSafe(session, jsonStr)
                 }
                 delay(tickRateMs.milliseconds)
             } else {

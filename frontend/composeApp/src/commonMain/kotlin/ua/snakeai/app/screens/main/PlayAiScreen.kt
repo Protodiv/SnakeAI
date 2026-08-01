@@ -198,6 +198,26 @@ fun PlayAiScreen(
                                 onStartClicked = { onEvent(PlayAiContract.Event.OnStartClicked) },
                                 onStopClicked = { onEvent(PlayAiContract.Event.OnStopClicked) }
                             )
+
+                            if (state.isPlaying) {
+                                Spacer(modifier = Modifier.height(spacing.xs))
+                                Button(
+                                    onClick = { onEvent(PlayAiContract.Event.OnRestartClicked) },
+                                    enabled = !state.isLoading && state.gameState?.isPlaying != true,
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = cyberColors.highlightStart
+                                    ),
+                                    shape = RoundedCornerShape(spacing.xs),
+                                    modifier = Modifier.fillMaxWidth().height(38.dp)
+                                ) {
+                                    Text(
+                                        text = "RESTART EXECUTION",
+                                        color = cyberColors.backgroundStart,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 12.sp
+                                    )
+                                }
+                            }
                         }
                     }
 

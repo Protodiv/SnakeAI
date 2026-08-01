@@ -38,6 +38,7 @@ class PlayAiViewModel(
         when (event) {
             PlayAiContract.Event.OnStartClicked -> startPlay()
             PlayAiContract.Event.OnStopClicked -> stopPlay()
+            PlayAiContract.Event.OnRestartClicked -> restartPlay()
             is PlayAiContract.Event.OnAgentNameChanged -> {
                 val query = event.name
                 val filtered = if (query.isEmpty()) {
@@ -162,6 +163,17 @@ class PlayAiViewModel(
                 isLoading = false,
                 logs = it.logs + ">> Autonomous execution stopped by operator."
             )
+        }
+    }
+
+    private fun restartPlay() {
+        if (currentState.isPlaying) {
+            updateState {
+                it.copy(
+                    logs = it.logs + ">> Restarting autonomous execution..."
+                )
+            }
+            startPlay()
         }
     }
 

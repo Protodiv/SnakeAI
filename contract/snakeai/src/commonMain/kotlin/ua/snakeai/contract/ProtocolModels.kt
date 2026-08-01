@@ -63,7 +63,7 @@ data class GameFrame(
 @Serializable
 data class TrainHyperparameters(
     val learningRate: Double = 0.001,
-    val maxEpisodes: Int = 1000,
+    val maxEpisodes: Int? = null,
     val batchSize: Int = 64
 )
 

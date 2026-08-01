@@ -39,7 +39,7 @@ abstract class BaseAiWebSocketHandler(
                         timestamp = LocalDateTime.now().toString()
                     )
                     val jsonStr = json.encodeToString(errorResponse)
-                    session.send(Mono.just(session.textMessage(jsonStr))).subscribe()
+                    sendSafe(session, jsonStr)
                 } catch (sendEx: Exception) {
                     log.error("Failed to send error details over WebSocket [ID: ${session.id}]", sendEx)
                 }
@@ -112,5 +112,24 @@ abstract class BaseAiWebSocketHandler(
             isExploration = isExploration,
             epsilon = epsilon
         )
+    }
+
+    protected fun sendSafe(session: WebSocketSession, message: String) {
+        session.send(Mono.just(session.textMessage(message)))
+            .subscribe(
+                null,
+                { error ->
+                    val msg = error.message ?: ""
+                    if (msg.contains("Connection has been closed", ignoreCase = true) ||
+                        msg.contains("AbortedException", ignoreCase = true) ||
+                        msg.contains("Broken pipe", ignoreCase = true) ||
+                        msg.contains("Connection reset", ignoreCase = true)
+                    ) {
+                        log.debug("WebSocket connection closed before send operation on session: ${session.id}")
+                    } else {
+                        log.warn("Error sending message on session ${session.id}: $msg", error)
+                    }
+                }
+            )
     }
 }

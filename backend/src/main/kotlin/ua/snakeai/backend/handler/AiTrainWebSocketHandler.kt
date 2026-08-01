@@ -25,7 +25,8 @@ import kotlin.time.Duration.Companion.milliseconds
 @Component
 class AiTrainWebSocketHandler(
     private val repository: TrainedModelRepository,
-    @Value("\${model.storage.path:models}") modelStoragePath: String
+    @Value("\${model.storage.path:models}") modelStoragePath: String,
+    @Value("\${model.training.default-max-episodes:100}") private val defaultMaxEpisodes: Int
 ) : BaseAiWebSocketHandler(modelStoragePath, LoggerFactory.getLogger(AiTrainWebSocketHandler::class.java)) {
 
     override suspend fun handleSession(session: WebSocketSession, scope: CoroutineScope) {
@@ -49,9 +50,9 @@ class AiTrainWebSocketHandler(
         scope.launch {
             try {
                 session.receive()
+                    .map { it.payloadAsText }
                     .asFlow()
-                    .collect { webSocketMessage ->
-                        val payload = webSocketMessage.payloadAsText
+                    .collect { payload ->
                         log.info("AI Training WS [ID: ${session.id}] received: $payload")
                         when (val cmd = json.decodeFromString<TrainCommand>(payload)) {
                             is TrainCommand.Start -> {
@@ -112,7 +113,7 @@ class AiTrainWebSocketHandler(
                                 gameState = state
                             )
                             val jsonStr = json.encodeToString(frame)
-                            session.send(Mono.just(session.textMessage(jsonStr))).subscribe()
+                            sendSafe(session, jsonStr)
                             delay(playbackTickRateMs.milliseconds)
                         }
                         lastPlayedEpisodeNum = epNum
@@ -128,7 +129,8 @@ class AiTrainWebSocketHandler(
         // Training Loop
         while (scope.isActive) {
             val currentAgent = agent
-            if (isTraining && currentAgent != null && currentEpisode < hyperparameters.maxEpisodes) {
+            val resolvedMaxEpisodes = hyperparameters.maxEpisodes ?: defaultMaxEpisodes
+            if (isTraining && currentAgent != null && currentEpisode < resolvedMaxEpisodes) {
                 currentEpisode++
 
                 val actualSize = resolveFieldSize(fieldSize)
@@ -161,7 +163,7 @@ class AiTrainWebSocketHandler(
                 completedEpisodes.trySend(CompletedEpisode(currentEpisode, calcResult.metrics, result.recordedStates))
 
                 // 3. Save model upon completion using extracted helper
-                if (currentEpisode >= hyperparameters.maxEpisodes) {
+                if (currentEpisode >= resolvedMaxEpisodes) {
                     isTraining = false
                     saveTrainedModel(
                         agent = currentAgent,
