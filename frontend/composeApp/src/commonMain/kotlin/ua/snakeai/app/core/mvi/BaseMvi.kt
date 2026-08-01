@@ -1,7 +1,7 @@
 package ua.snakeai.app.core.mvi
 
 import androidx.compose.runtime.Immutable
-import moe.tlaster.precompose.navigation.Navigator
+import androidx.navigation.NavHostController
 
 @Immutable
 interface UiState
@@ -15,7 +15,7 @@ sealed interface NavigationEffect : UiEffect {
     data class ToRoute(val route: String) : NavigationEffect
 }
 
-fun Navigator.handle(effect: NavigationEffect) {
+fun NavHostController.handle(effect: NavigationEffect) {
     when (effect) {
         NavigationEffect.Back -> popBackStack()
         is NavigationEffect.ToRoute -> navigate(effect.route)

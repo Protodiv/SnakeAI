@@ -10,6 +10,8 @@ import ua.snakeai.app.core.mvi.BaseViewModel
 import ua.snakeai.app.data.repository.SnakeAiRepository
 import ua.snakeai.app.navigation.NavigationRoute
 
+import ua.snakeai.app.data.api.AppResult
+
 class MainMenuViewModel(
     private val repository: SnakeAiRepository
 ) : BaseViewModel<MainMenuContract.State, MainMenuContract.Event, MainMenuContract.Effect>(
@@ -44,21 +46,32 @@ class MainMenuViewModel(
 
     private fun loadModelInfo() {
         viewModelScope.launch {
-            updateState { it.copy(isLoading = true, errorMessage = null) }
-            try {
-                val model = repository.getAiModel()
-                updateState {
-                    it.copy(
-                        isLoading = false,
-                        modelInfo = model
+            updateState { it.copy(isLoading = true) }
+            when (val result = repository.getAiModels()) {
+                is AppResult.Success -> {
+                    val models = result.data
+                    val model = models.maxByOrNull { it.topScore } ?: ua.snakeai.contract.TrainedAiModel(
+                        name = "Agent Alpha",
+                        episodesRun = 0L,
+                        efficiency = 0.0,
+                        topScore = 0
                     )
+                    updateState {
+                        it.copy(
+                            isLoading = false,
+                            modelInfo = model
+                        )
+                    }
+                    emitEffect(MainMenuContract.Effect.ShowToast("Successfully loaded ${models.size} AI models"))
                 }
-            } catch (e: Exception) {
-                updateState {
-                    it.copy(
-                        isLoading = false,
-                        errorMessage = e.message ?: "Unknown error occurred"
-                    )
+                is AppResult.Error -> {
+                    val errorMsg = "Error loading model: ${result.error}"
+                    updateState {
+                        it.copy(
+                            isLoading = false,
+                        )
+                    }
+                    emitEffect(MainMenuContract.Effect.ShowToast(errorMsg))
                 }
             }
         }

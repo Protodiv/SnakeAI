@@ -6,22 +6,18 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
-import ua.snakeai.app.di.initKoin
 
-fun main() {
-    initKoin()
-    application {
-        val windowState = rememberWindowState(
-            width = 1200.dp,
-            height = 800.dp,
-            position = WindowPosition(Alignment.Center)
-        )
-        Window(
-            onCloseRequest = ::exitApplication,
-            title = "Snake AI",
-            state = windowState
-        ) {
-            App()
-        }
+fun main() = application {
+    val windowState = rememberWindowState(
+        width = 1200.dp,
+        height = 800.dp,
+        position = WindowPosition(Alignment.Center)
+    )
+    Window(
+        onCloseRequest = ::exitApplication,
+        title = "Snake AI",
+        state = windowState
+    ) {
+        App()
     }
 }

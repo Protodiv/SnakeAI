@@ -9,6 +9,8 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -24,57 +26,61 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavHostController
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
-import moe.tlaster.precompose.navigation.Navigator
 import org.koin.compose.viewmodel.koinViewModel
-import ua.snakeai.app.core.mvi.handle
 import ua.snakeai.app.ui.shared.*
 import ua.snakeai.app.ui.theme.cyberColors
 import ua.snakeai.app.ui.theme.spacing
 import ua.snakeai.app.view.game.GameContract
 import ua.snakeai.app.view.game.GamePanel
 import ua.snakeai.app.view.game.GameViewModel
-import ua.snakeai.app.view.main.playmenu.PlayMenuContract
-import ua.snakeai.app.view.main.playmenu.PlayMenuViewModel
 import ua.snakeai.contract.Direction
 import ua.snakeai.contract.GameStatus
 
 @Composable
 fun PlayManualScene(
-    navigator: () -> Navigator
+    navigator: NavHostController
 ) {
-    val playMenuViewModel: PlayMenuViewModel = koinViewModel()
-    val menuState by playMenuViewModel.state.collectAsStateWithLifecycle()
-    val nav = navigator()
-
-    LaunchedEffect(playMenuViewModel) {
-        playMenuViewModel.navigation.collectLatest(nav::handle)
-    }
+    val gameViewModel: GameViewModel = koinViewModel()
+    val state by gameViewModel.state.collectAsStateWithLifecycle()
 
     PlayManualScreen(
-        menuState = menuState,
-        onBackClicked = { nav.popBackStack() }
+        state = state,
+        effect = { gameViewModel.effect },
+        onEvent = gameViewModel::onEvent,
+        onBackClicked = navigator::popBackStack
     )
 }
 
 @Composable
 fun PlayManualScreen(
-    menuState: PlayMenuContract.State,
+    state: GameContract.State,
+    effect: () -> Flow<GameContract.Effect>,
+    onEvent: (GameContract.Event) -> Unit,
     onBackClicked: () -> Unit
 ) {
     val cyberColors = MaterialTheme.cyberColors
     val spacing = MaterialTheme.spacing
-    val keyList = remember { persistentListOf("W", "A", "S", "D") }
-
-    val gameViewModel: GameViewModel = koinViewModel()
-    val gameState by gameViewModel.state.collectAsStateWithLifecycle()
-
+    val keyList = persistentListOf("W", "A", "S", "D")
+    val snackbarHostState = remember { SnackbarHostState() }
     val focusRequester = remember { FocusRequester() }
 
+    LaunchedEffect(effect) {
+        effect().collectLatest { item ->
+            when (item) {
+                is GameContract.Effect.ShowSnackBar -> {
+                    snackbarHostState.showSnackbar(item.message)
+                }
+            }
+        }
+    }
+
     // Automatically request keyboard focus when game launches or restarts
-    LaunchedEffect(gameState.status) {
-        if (gameState.status == GameStatus.PLAYING || gameState.status == GameStatus.IDLE) {
+    LaunchedEffect(state.status) {
+        if (state.status == GameStatus.PLAYING || state.status == GameStatus.IDLE) {
             focusRequester.requestFocus()
         }
     }
@@ -95,33 +101,14 @@ fun PlayManualScreen(
             modifier = Modifier.fillMaxSize()
         ) {
             // Header Bar
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(spacing.xxl)
-                    .background(cyberColors.backgroundStart.copy(alpha = 0.7f))
-                    .drawBehind {
-                        val strokeWidth = 1.dp.toPx()
-                        val y = size.height - strokeWidth / 2
-                        drawLine(
-                            color = cyberColors.glassBorder.copy(alpha = 0.3f),
-                            start = Offset(0f, y),
-                            end = Offset(size.width, y),
-                            strokeWidth = strokeWidth
-                        )
-                    }
-                    .padding(horizontal = spacing.cardPadding),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            CyberHeader(
+                onBackClicked = onBackClicked
             ) {
-                // Back Button
-                CyberBackButton(onClick = onBackClicked)
-
                 // Stats / HUD Display
                 HudStatsDisplay(
-                    score = gameState.score,
-                    topScore = gameState.topScore,
-                    steps = gameState.steps
+                    score = state.score,
+                    topScore = state.topScore,
+                    steps = state.steps
                 )
             }
 
@@ -140,73 +127,42 @@ fun PlayManualScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     // Left: The square game arena container
-                    Box(
+                    GameArenaContainer(
+                        state = state,
+                        protocolText = "Protocol: Manual_Override",
+                        agentNameText = "Agent: Human_H01",
                         modifier = Modifier
                             .weight(1.3f)
-                            .aspectRatio(1f)
-                    ) {
-                        // Inner container for clipping, background, border, key events, and click focus
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .focusRequester(focusRequester)
-                                .focusable()
-                                .onKeyEvent { keyEvent ->
-                                    if (keyEvent.type == KeyEventType.KeyDown) {
-                                        val direction = when (keyEvent.key) {
-                                            Key.W, Key.DirectionUp -> Direction.UP
-                                            Key.S, Key.DirectionDown -> Direction.DOWN
-                                            Key.A, Key.DirectionLeft -> Direction.LEFT
-                                            Key.D, Key.DirectionRight -> Direction.RIGHT
-                                            else -> null
-                                        }
-                                        if (direction != null) {
-                                            gameViewModel.onEvent(GameContract.Event.OnDirectionChanged(direction))
-                                            true
-                                        } else {
-                                            false
-                                        }
+                            .aspectRatio(1f),
+                        innerModifier = Modifier
+                            .focusRequester(focusRequester)
+                            .focusable()
+                            .onKeyEvent { keyEvent ->
+                                if (keyEvent.type == KeyEventType.KeyDown) {
+                                    val direction = when (keyEvent.key) {
+                                        Key.W, Key.DirectionUp -> Direction.UP
+                                        Key.S, Key.DirectionDown -> Direction.DOWN
+                                        Key.A, Key.DirectionLeft -> Direction.LEFT
+                                        Key.D, Key.DirectionRight -> Direction.RIGHT
+                                        else -> null
+                                    }
+                                    if (direction != null) {
+                                        onEvent(GameContract.Event.OnDirectionChanged(direction))
+                                        true
                                     } else {
                                         false
                                     }
+                                } else {
+                                    false
                                 }
-                                .clip(RoundedCornerShape(spacing.xs))
-                                .background(cyberColors.glassFill)
-                                .border(1.dp, cyberColors.glassBorder, RoundedCornerShape(spacing.xs))
-                                .clickable(
-                                    interactionSource = remember { MutableInteractionSource() },
-                                    indication = null
-                                ) {
-                                    focusRequester.requestFocus()
-                                }
-                        ) {
-                            GamePanel(
-                                state = gameState,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        }
-
-                        // Corner Badges (placed on the unclipped parent Box)
-                        CornerBadge(
-                            text = "Protocol: ${menuState.protocol}",
-                            textColor = cyberColors.highlightStart,
-                            backgroundColor = cyberColors.glassBorder,
-                            borderColor = cyberColors.highlightStart,
-                            modifier = Modifier
-                                .align(Alignment.TopStart)
-                                .offset(x = (-8).dp, y = (-8).dp)
-                        )
-
-                        CornerBadge(
-                            text = "Agent: ${menuState.agent}",
-                            textColor = Color.White,
-                            backgroundColor = cyberColors.snakeHead.copy(alpha = 0.9f),
-                            borderColor = cyberColors.snakeHead,
-                            modifier = Modifier
-                                .align(Alignment.BottomEnd)
-                                .offset(x = 8.dp, y = 8.dp)
-                        )
-                    }
+                            }
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null
+                            ) {
+                                focusRequester.requestFocus()
+                            }
+                    )
 
                     Spacer(modifier = Modifier.width(spacing.lg))
 
@@ -219,20 +175,20 @@ fun PlayManualScreen(
                         verticalArrangement = Arrangement.Center
                     ) {
                         // Active direction badge
-                        ActiveDirBadge(direction = gameState.direction)
+                        ActiveDirBadge(direction = state.direction)
 
                         Spacer(modifier = Modifier.height(spacing.md))
 
                         // Direction D-Pad controller (purely visual display as instructed)
-                        DirectionDpad(currentDirection = gameState.direction)
+                        DirectionDpad(currentDirection = state.direction)
 
                         Spacer(modifier = Modifier.height(spacing.lg))
 
                         // Field Settings
                         FieldSizeSelector(
-                            selectedConfig = gameState.selectedFieldSize,
+                            selectedConfig = state.selectedFieldSize,
                             onConfigChanged = { config ->
-                                gameViewModel.onEvent(GameContract.Event.OnFieldSizeConfigChanged(config))
+                                onEvent(GameContract.Event.OnFieldSizeConfigChanged(config))
                             },
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -240,9 +196,9 @@ fun PlayManualScreen(
                         Spacer(modifier = Modifier.height(spacing.lg))
 
                         // Action / Restart Buttons
-                        val isFinished = gameState.status == GameStatus.GAME_OVER || gameState.status == GameStatus.VICTORY
+                        val isFinished = state.status == GameStatus.GAME_OVER || state.status == GameStatus.VICTORY
                         CyberRestartButton(
-                            onClick = { gameViewModel.onEvent(GameContract.Event.OnRestartClicked) },
+                            onClick = { onEvent(GameContract.Event.OnRestartClicked) },
                             isFinished = isFinished,
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -279,13 +235,13 @@ fun PlayManualScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(spacing.sm)
                 ) {
-                    val statusText = when (gameState.status) {
+                    val statusText = when (state.status) {
                         GameStatus.IDLE -> "SYSTEM READY"
                         GameStatus.PLAYING -> "SYSTEM ACTIVE"
                         GameStatus.GAME_OVER -> "COLLISION DETECTED"
                         GameStatus.VICTORY -> "GRID COMPLETED"
                     }
-                    val statusColor = when (gameState.status) {
+                    val statusColor = when (state.status) {
                         GameStatus.IDLE -> cyberColors.textSecondary
                         GameStatus.PLAYING -> cyberColors.apple
                         GameStatus.GAME_OVER -> cyberColors.snakeHead
@@ -295,7 +251,7 @@ fun PlayManualScreen(
                     StatusBadge(
                         text = statusText,
                         color = statusColor,
-                        isPulsing = gameState.status == GameStatus.PLAYING
+                        isPulsing = state.status == GameStatus.PLAYING
                     )
 
                     StatusBadge(
@@ -305,5 +261,9 @@ fun PlayManualScreen(
                 }
             }
         }
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 16.dp)
+        )
     }
 }

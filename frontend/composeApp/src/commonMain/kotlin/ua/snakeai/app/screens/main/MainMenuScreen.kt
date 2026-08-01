@@ -1,67 +1,75 @@
 package ua.snakeai.app.screens.main
 
-import androidx.compose.animation.core.*
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.ModelTraining
+import androidx.compose.material.icons.filled.Psychology
+import androidx.compose.material.icons.filled.SportsEsports
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import kotlinx.coroutines.flow.collectLatest
-import moe.tlaster.precompose.navigation.Navigator
-import org.koin.compose.viewmodel.koinViewModel
-import ua.snakeai.app.core.mvi.NavigationEffect
-import ua.snakeai.app.core.mvi.handle
+import androidx.navigation.NavHostController
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collectLatest
+import org.koin.compose.viewmodel.koinViewModel
+import ua.snakeai.app.core.mvi.handle
 import ua.snakeai.app.ui.shared.*
-import ua.snakeai.app.ui.theme.spacing
 import ua.snakeai.app.ui.theme.cyberColors
+import ua.snakeai.app.ui.theme.spacing
 import ua.snakeai.app.view.main.mainmenu.MainMenuContract
 import ua.snakeai.app.view.main.mainmenu.MainMenuViewModel
 
 @Composable
 fun MainMenuScene(
-    navigator: () -> Navigator
+    navigator: NavHostController
 ) {
     val viewModel: MainMenuViewModel = koinViewModel()
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val nav = navigator()
 
     LaunchedEffect(viewModel) {
-        viewModel.navigation.collectLatest(nav::handle)
+        viewModel.navigation.collectLatest(navigator::handle)
     }
 
     MainMenuScreen(
         state = state,
-        onEvent = viewModel::onEvent,
-        onNavigationRequested = nav::handle
+        effect = { viewModel.effect },
+        onEvent = viewModel::onEvent
     )
 }
 
 @Composable
 fun MainMenuScreen(
     state: MainMenuContract.State,
-    onEvent: (MainMenuContract.Event) -> Unit,
-    onNavigationRequested: (NavigationEffect) -> Unit
+    effect: () -> Flow<MainMenuContract.Effect>,
+    onEvent: (MainMenuContract.Event) -> Unit
 ) {
     val cyberColors = MaterialTheme.cyberColors
     val spacing = MaterialTheme.spacing
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(effect) {
+        effect().collectLatest { effect ->
+            when (effect) {
+                is MainMenuContract.Effect.ShowToast -> {
+                    snackbarHostState.showSnackbar(effect.message)
+                }
+            }
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -150,26 +158,32 @@ fun MainMenuScreen(
             Spacer(modifier = Modifier.height(spacing.xxl))
 
             // Footer Stats
-            val statList = remember(state.modelInfo) {
-                persistentListOf(
-                    StatItem(
-                        value = state.modelInfo?.episodesRun?.let { formatEpisodes(it) } ?: "1.2M+",
-                        label = "EPISODES RUN",
-                        valueColor = cyberColors.highlightStart
-                    ),
-                    StatItem(
-                        value = state.modelInfo?.efficiency?.let { "$it%" } ?: "98.4%",
-                        label = "EFFICIENCY",
-                        valueColor = cyberColors.apple
-                    ),
-                    StatItem(
-                        value = state.modelInfo?.topScore?.toString() ?: "428",
-                        label = "TOP SCORE",
-                        valueColor = cyberColors.snakeHead
-                    )
+            val info = state.modelInfo
+            val statList = persistentListOf(
+                StatItem(
+                    value = if (info != null) formatEpisodes(info.episodesRun) else "0",
+                    label = "EPISODES RUN",
+                    valueColor = cyberColors.highlightStart
+                ),
+                StatItem(
+                    value = if (info != null) "${info.efficiency}%" else "0.0%",
+                    label = "EFFICIENCY",
+                    valueColor = cyberColors.apple
+                ),
+                StatItem(
+                    value = info?.topScore?.toString() ?: "0",
+                    label = "TOP SCORE",
+                    valueColor = cyberColors.snakeHead
                 )
-            }
+            )
             FooterStatsPanel(stats = statList)
         }
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 16.dp)
+        )
     }
 }
