@@ -21,10 +21,15 @@ dependencies {
     implementation(libs.spring.boot.starter.webflux)
     implementation(libs.spring.boot.starter.data.jpa)
     implementation(libs.h2.database)
+    runtimeOnly(libs.postgresql)
     implementation(libs.dl4j.core)
     implementation(libs.nd4j.native)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.reactor)
+    implementation(libs.aws.sdk.s3)
+    implementation(libs.micrometer.registry.cloudwatch)
+    testImplementation(libs.spring.boot.starter.test)
+    testRuntimeOnly(libs.junit.platform.launcher)
 }
 
 java {
@@ -37,4 +42,8 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
     compilerOptions {
         freeCompilerArgs.add("-Xjsr305=strict")
     }
+}
+
+tasks.test {
+    useJUnitPlatform()
 }

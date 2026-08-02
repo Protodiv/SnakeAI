@@ -8,12 +8,11 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.socket.WebSocketSession
-import reactor.core.publisher.Mono
 import ua.snakeai.backend.ai.DqnAgent
 import ua.snakeai.backend.ai.SnakeEnv
 import ua.snakeai.backend.ai.Transition
-import ua.snakeai.backend.repository.TrainedModelEntity
-import ua.snakeai.backend.repository.TrainedModelRepository
+import ua.snakeai.backend.exception.ModelSaveException
+import ua.snakeai.backend.service.TrainModelService
 import ua.snakeai.contract.*
 import java.io.File
 import java.time.LocalDateTime
@@ -24,7 +23,7 @@ import kotlin.time.Duration.Companion.milliseconds
 
 @Component
 class AiTrainWebSocketHandler(
-    private val repository: TrainedModelRepository,
+    private val trainModelService: TrainModelService,
     @Value("\${model.storage.path:models}") modelStoragePath: String,
     @Value("\${model.training.default-max-episodes:100}") private val defaultMaxEpisodes: Int
 ) : BaseAiWebSocketHandler(modelStoragePath, LoggerFactory.getLogger(AiTrainWebSocketHandler::class.java)) {
@@ -171,7 +170,8 @@ class AiTrainWebSocketHandler(
                         topScore = topScore,
                         recentScores = recentScores,
                         rewardHistory = rewardHistory,
-                        lossHistory = lossHistory
+                        lossHistory = lossHistory,
+                        session = session
                     )
                 }
             } else {
@@ -284,37 +284,70 @@ class AiTrainWebSocketHandler(
         topScore: Int,
         recentScores: List<Int>,
         rewardHistory: List<Double>,
-        lossHistory: List<Double>
+        lossHistory: List<Double>,
+        session: WebSocketSession
     ) {
-        val modelsDir = File(modelStoragePath)
-        if (!modelsDir.exists()) modelsDir.mkdirs()
-        val modelFile = File(modelsDir, "${agent.name}.zip")
-        agent.save(modelFile)
+        var tempFile: File? = null
+        try {
+            tempFile = File.createTempFile("agent-save-${agent.name}-", ".zip")
+            tempFile.deleteOnExit()
+            agent.save(tempFile)
 
-        // Save details to database
-        val dbDir = File("db")
-        if (!dbDir.exists()) dbDir.mkdirs()
+            // Calculate efficiency as average score of last 100 episodes
+            val efficiency = recentScores.average()
 
-        // Calculate efficiency as average score of last 100 episodes
-        val efficiency = recentScores.average()
+            // Downsample histories to a maximum of 1000 points to keep database size bounded
+            val sampledRewards = rewardHistory.downsample(1000)
+            val sampledLosses = lossHistory.downsample(1000)
 
-        // Serialize history arrays
-        val historyMap = mapOf(
-            "rewards" to rewardHistory,
-            "losses" to lossHistory
-        )
-        val historyStr = json.encodeToString(historyMap)
+            // Serialize history arrays
+            val historyMap = mapOf(
+                "rewards" to sampledRewards,
+                "losses" to sampledLosses
+            )
+            val historyStr = json.encodeToString(historyMap)
 
-        val entity = TrainedModelEntity(
-            name = agent.name,
-            episodesRun = episodesRun.toLong(),
-            efficiency = efficiency,
-            topScore = topScore,
-            filePath = modelFile.absolutePath,
-            createdAt = LocalDateTime.now(),
-            historyJson = historyStr
-        )
-        repository.save(entity)
+            trainModelService.saveModel(
+                agentName = agent.name,
+                episodesRun = episodesRun.toLong(),
+                efficiency = efficiency,
+                topScore = topScore,
+                tempModelFile = tempFile,
+                historyJson = historyStr
+            )
+        } catch (e: ModelSaveException) {
+            log.error("Custom error saving model: ${e.message}", e)
+            val errorResponse = ErrorResponse(
+                message = e.message,
+                code = e.errorCode,
+                timestamp = LocalDateTime.now().toString()
+            )
+            sendSafe(session, json.encodeToString(errorResponse))
+        } catch (e: Exception) {
+            log.error("Unexpected error saving model: ${e.message}", e)
+            val errorResponse = ErrorResponse(
+                message = "An unexpected error occurred while saving the model: ${e.message}",
+                code = "UNEXPECTED_SAVE_ERROR",
+                timestamp = LocalDateTime.now().toString()
+            )
+            sendSafe(session, json.encodeToString(errorResponse))
+        } finally {
+            tempFile?.let {
+                if (it.exists()) {
+                    it.delete()
+                }
+            }
+        }
+    }
+
+    private fun List<Double>.downsample(maxSize: Int): List<Double> {
+        if (this.size <= maxSize) return this
+        val step = this.size.toDouble() / maxSize
+        return List(maxSize) { i ->
+            val start = (i * step).toInt().coerceIn(0, this.size - 1)
+            val end = ((i + 1) * step).toInt().coerceIn(start + 1, this.size)
+            this.subList(start, end).average()
+        }
     }
 
     data class CompletedEpisode(

@@ -1,0 +1,15 @@
+aws:
+  s3:
+    bucket-name: snakeai-models-bucket
+    region: us-east-1
+  localstack:
+    endpoint: http://localhost:4566
+
+---
+spring:
+  config:
+    activate:
+      on-profile: "localstack & docker"
+aws:
+  localstack:
+    endpoint: http://localstack:4566

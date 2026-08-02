@@ -13,7 +13,7 @@ services:
     environment:
       - MODEL_STORAGE_PATH=/app/models
       - DATABASE_PATH=/app/db/snakeai
-      - SPRING_PROFILES_ACTIVE=dev
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-dev,docker}
 
   frontend-web:
     build:
@@ -26,6 +26,21 @@ services:
       - "8081:80"
     depends_on:
       - backend
+
+  localstack:
+    image: localstack/localstack:latest
+    container_name: snakeai-localstack
+    profiles:
+      - localstack
+    ports:
+      - "127.0.0.1:4566:4566"
+    environment:
+      - SERVICES=s3
+      - AWS_DEFAULT_REGION=us-east-1
+      - LOCALSTACK_AUTH_TOKEN=${LOCALSTACK_AUTH_TOKEN}
+    volumes:
+      - "${LOCALSTACK_VOLUME_DIR:-./.localstack}:/var/lib/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
 
 volumes:
   model_data:
