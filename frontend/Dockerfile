@@ -33,8 +33,10 @@ COPY frontend/ frontend/
 #
 # SERVER_HOST / SERVER_PORT are baked into BuildConfig at compile time.
 # Pass them via:  docker build --build-arg SERVER_HOST=api.example.com ...
-ENV SERVER_HOST=localhost
-ENV SERVER_PORT=8080
+ARG SERVER_HOST=localhost
+ARG SERVER_PORT=8080
+ENV SERVER_HOST=$SERVER_HOST
+ENV SERVER_PORT=$SERVER_PORT
 
 RUN --mount=type=cache,id=frontend-gradle,target=/root/.gradle \
     --mount=type=cache,id=frontend-konan,target=/root/.konan \

@@ -65,7 +65,10 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker build -t $ECR_REGISTRY/${{ env.ECR_FRONTEND_REPO }}:$IMAGE_TAG -f frontend/Dockerfile .
+          docker build -t $ECR_REGISTRY/${{ env.ECR_FRONTEND_REPO }}:$IMAGE_TAG \
+            --build-arg SERVER_HOST=${{ secrets.SERVER_HOST }} \
+            --build-arg SERVER_PORT=${{ secrets.SERVER_PORT || '80' }} \
+            -f frontend/Dockerfile .
           docker push $ECR_REGISTRY/${{ env.ECR_FRONTEND_REPO }}:$IMAGE_TAG
           echo "image=$ECR_REGISTRY/${{ env.ECR_FRONTEND_REPO }}:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
