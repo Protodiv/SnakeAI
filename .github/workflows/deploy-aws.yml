@@ -77,6 +77,11 @@ jobs:
           task-definition: ${{ env.ECS_BACKEND_TASK_DEF }}
           container-name: backend
           image: ${{ steps.build-backend-image.outputs.image }}
+          environment-variables: |
+            RDS_HOSTNAME=${{ secrets.RDS_HOSTNAME }}
+            RDS_DB_NAME=${{ secrets.RDS_DB_NAME }}
+            RDS_USERNAME=${{ secrets.RDS_USERNAME }}
+            RDS_PASSWORD=${{ secrets.RDS_PASSWORD }}
 
       - name: Deploy Amazon ECS Task (Backend)
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
