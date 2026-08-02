@@ -24,3 +24,12 @@ model:
     path: ${MODEL_STORAGE_PATH:models}
   training:
     default-max-episodes: ${DEFAULT_MAX_EPISODES:100}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: always

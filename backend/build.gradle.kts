@@ -28,6 +28,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.reactor)
     implementation(libs.aws.sdk.s3)
     implementation(libs.micrometer.registry.cloudwatch)
+    implementation(libs.spring.boot.starter.actuator)
     testImplementation(libs.spring.boot.starter.test)
     testRuntimeOnly(libs.junit.platform.launcher)
 }
