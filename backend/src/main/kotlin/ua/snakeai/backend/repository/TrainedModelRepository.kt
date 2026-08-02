@@ -27,8 +27,7 @@ data class TrainedModelEntity(
     @Column(name = "created_at", nullable = false)
     val createdAt: LocalDateTime = LocalDateTime.now(),
 
-    @Lob
-    @Column(name = "history_json")
+    @Column(name = "history_json", columnDefinition = "TEXT")
     val historyJson: String? = null
 )
 

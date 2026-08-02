@@ -1,0 +1,30 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://${RDS_HOSTNAME}:${RDS_PORT:5432}/${RDS_DB_NAME}
+    driver-class-name: org.postgresql.Driver
+    username: ${RDS_USERNAME}
+    password: ${RDS_PASSWORD}
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        temp:
+          use_jdbc_metadata_defaults: false
+  h2:
+    console:
+      enabled: false
+
+aws:
+  s3:
+    bucket-name: ${AWS_S3_BUCKET:snakeai-models-bucket}
+    region: ${AWS_REGION:us-east-1}
+
+management:
+  metrics:
+    export:
+      cloudwatch:
+        namespace: SnakeAI
+        step: 1m
+        enabled: true

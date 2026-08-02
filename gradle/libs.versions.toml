@@ -8,6 +8,7 @@ springBoot = "3.3.4"
 springDependencyManagement = "1.1.6"
 dl4j = "1.0.0-M2.1"
 kotlinx-coroutines = "1.10.2"
+aws-sdk = "2.25.15"
 
 [libraries]
 kotlin-reflect = { group = "org.jetbrains.kotlin", name = "kotlin-reflect", version.ref = "kotlin" }
@@ -32,6 +33,11 @@ ktor-client-websockets = { group = "io.ktor", name = "ktor-client-websockets", v
 spring-boot-starter-webflux = { group = "org.springframework.boot", name = "spring-boot-starter-webflux", version.ref = "springBoot" }
 spring-boot-starter-data-jpa = { group = "org.springframework.boot", name = "spring-boot-starter-data-jpa", version.ref = "springBoot" }
 h2-database = { group = "com.h2database", name = "h2", version = "2.2.224" }
+postgresql = { group = "org.postgresql", name = "postgresql", version = "42.7.4" }
+aws-sdk-s3 = { group = "software.amazon.awssdk", name = "s3", version.ref = "aws-sdk" }
+micrometer-registry-cloudwatch = { group = "io.micrometer", name = "micrometer-registry-cloudwatch2", version = "1.13.5" }
+spring-boot-starter-test = { group = "org.springframework.boot", name = "spring-boot-starter-test", version.ref = "springBoot" }
+junit-platform-launcher = { group = "org.junit.platform", name = "junit-platform-launcher", version = "1.10.3" }
 
 # Deep Learning (DL4J + ND4J CPU)
 dl4j-core = { group = "org.deeplearning4j", name = "deeplearning4j-core", version.ref = "dl4j" }

@@ -1,0 +1,104 @@
+name: Deploy to AWS ECS
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  id-token: write # Required for AWS OIDC authentication
+  contents: read
+
+env:
+  AWS_REGION: eu-north-1
+  ECR_BACKEND_REPO: snakeai/backend
+  ECR_FRONTEND_REPO: snakeai/frontend
+  ECS_CLUSTER: snakeai-cluster
+  ECS_BACKEND_SERVICE: snakeai-backend-service
+  ECS_FRONTEND_SERVICE: snakeai-frontend-service
+  ECS_BACKEND_TASK_DEF: .aws/backend-task-definition.json
+  ECS_FRONTEND_TASK_DEF: .aws/frontend-task-definition.json
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Build and Test Project
+        run: ./gradlew build
+
+      # Authenticate to AWS using OIDC (Role Assumption) instead of long-lived access keys
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::661390316383:role/github-actions-ecs-deploy-role
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # ── Build & Push Backend ───────────────────────────────────────
+      - name: Build, tag, and push Backend Image
+        id: build-backend-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/${{ env.ECR_BACKEND_REPO }}:$IMAGE_TAG -f backend/Dockerfile .
+          docker push $ECR_REGISTRY/${{ env.ECR_BACKEND_REPO }}:$IMAGE_TAG
+          echo "image=$ECR_REGISTRY/${{ env.ECR_BACKEND_REPO }}:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      # ── Build & Push Frontend ──────────────────────────────────────
+      - name: Build, tag, and push Frontend Image
+        id: build-frontend-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/${{ env.ECR_FRONTEND_REPO }}:$IMAGE_TAG -f frontend/Dockerfile .
+          docker push $ECR_REGISTRY/${{ env.ECR_FRONTEND_REPO }}:$IMAGE_TAG
+          echo "image=$ECR_REGISTRY/${{ env.ECR_FRONTEND_REPO }}:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      # ── Deploy Backend to ECS ─────────────────────────────────────
+      - name: Fill in the new image ID in the Amazon ECS task definition (Backend)
+        id: task-def-backend
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ${{ env.ECS_BACKEND_TASK_DEF }}
+          container-name: backend
+          image: ${{ steps.build-backend-image.outputs.image }}
+
+      - name: Deploy Amazon ECS Task (Backend)
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.task-def-backend.outputs.task-definition }}
+          service: ${{ env.ECS_BACKEND_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true
+
+      # ── Deploy Frontend to ECS ────────────────────────────────────
+      - name: Fill in the new image ID in the Amazon ECS task definition (Frontend)
+        id: task-def-frontend
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ${{ env.ECS_FRONTEND_TASK_DEF }}
+          container-name: frontend
+          image: ${{ steps.build-frontend-image.outputs.image }}
+
+      - name: Deploy Amazon ECS Task (Frontend)
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.task-def-frontend.outputs.task-definition }}
+          service: ${{ env.ECS_FRONTEND_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true
