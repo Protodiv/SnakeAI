@@ -40,7 +40,7 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::661390316383:role/github-actions-ecs-deploy-role
+          role-to-assume: ${{ vars.ROLE_TO_ASSUME }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to Amazon ECR
@@ -85,6 +85,8 @@ jobs:
             RDS_DB_NAME=${{ secrets.RDS_DB_NAME }}
             RDS_USERNAME=${{ secrets.RDS_USERNAME }}
             RDS_PASSWORD=${{ secrets.RDS_PASSWORD }}
+            AWS_S3_BUCKET=${{ vars.AWS_S3_BUCKET }}
+            AWS_REGION=${{ vars.AWS_REGION }}
 
       - name: Deploy Amazon ECS Task (Backend)
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
