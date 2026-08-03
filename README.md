@@ -4,6 +4,19 @@
 
 ---
 
+## 📸 Visual Showcase
+
+### Application Screens
+| Main Menu | Manual Play Mode |
+|:---:|:---:|
+| ![Main Menu](screenshots/main_menu.png) | ![Manual Play](screenshots/manual_play.png) |
+
+| AI Play (Showcase) | DQN Training Dashboard |
+|:---:|:---:|
+| ![AI Play](screenshots/play_ai.png) | ![Training Mode](screenshots/train_dqn.png) |
+
+---
+
 ## 🚀 Key Features
 
 *   **Cyberpunk HUD UI:** Immersive dark-mode visual interface with glow effects, CRT-style scanlines, custom typography, and fluid state changes.
