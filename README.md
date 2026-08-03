@@ -1,5 +1,7 @@
 # SnakeAI — Hybrid Multiplatform Reinforcement Learning System
 
+🌐 **Live Demo:** [http://snakeai-alb-1104877883.eu-north-1.elb.amazonaws.com/](http://snakeai-alb-1104877883.eu-north-1.elb.amazonaws.com/)
+
 **SnakeAI** is a full-stack, real-time reinforcement learning system that pairs a classic Snake game with an autonomous Deep Q-Network (DQN) agent. The application features a stunning retro-cyberpunk user interface built using **Compose Multiplatform** (targeting both Desktop JVM and Web Wasm-JS), powered by a reactive **Spring Boot** backend using **Deeplearning4j (DL4J)** for the neural network training loop.
 
 ---
@@ -118,7 +120,9 @@ docker-compose up --build
 
 ## ☁️ AWS Cloud Production Deployment
 
-Our production setup utilizes a serverless architecture designed for scalability, zero downtime, and container isolation:
+Our production setup utilizes a serverless architecture designed for scalability, zero downtime, and container isolation.
+
+🌐 **Live Application URL:** [http://snakeai-alb-1104877883.eu-north-1.elb.amazonaws.com/](http://snakeai-alb-1104877883.eu-north-1.elb.amazonaws.com/)
 
 1. **Continuous Deployment:** On commits to `main`, GitHub Actions authenticates with AWS via secure OpenID Connect (OIDC) roles (no static credentials).
 2. **Container Registry:** Builds and tags docker images, pushing them to Amazon ECR.
@@ -126,3 +130,11 @@ Our production setup utilizes a serverless architecture designed for scalability
    *   `snakeai-backend-service` (Spring Boot environment communicating with RDS PostgreSQL)
    *   `snakeai-frontend-service` (Web Nginx static bundle router)
 4. **Data Assets Persistence:** Model binary file checkpointing `.zip` weights are persisted directly to **Amazon S3** cloud buckets, while training history logs are recorded in a PostgreSQL DB on **Amazon RDS**.
+
+---
+
+## 📋 Roadmaps & TODO List
+
+- [ ] **Test Coverage:** Unit tests & Instrumented/UI tests for the game engine and Compose components.
+- [ ] **Adaptive Screen Support:** Optimize layouts, scaling, and dashboard visibility for various screen resolutions.
+- [ ] **Game Engine Input Fixes:** Refactor and fix input processing/latency in the core game engine loop to prevent ghost commands.
