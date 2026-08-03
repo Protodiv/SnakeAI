@@ -23,7 +23,7 @@ model:
   storage:
     path: ${MODEL_STORAGE_PATH:models}
   training:
-    default-max-episodes: ${DEFAULT_MAX_EPISODES:100}
+    default-max-episodes: ${DEFAULT_MAX_EPISODES:1000}
 
 management:
   endpoints:

@@ -34,6 +34,9 @@ jobs:
           cache: 'gradle'
 
       - name: Build and Test Project
+        env:
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_PORT: ${{ secrets.SERVER_PORT || '80' }}
         run: ./gradlew build
 
       # Authenticate to AWS using OIDC (Role Assumption) instead of long-lived access keys
@@ -47,30 +50,32 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       # ── Build & Push Backend ───────────────────────────────────────
       - name: Build, tag, and push Backend Image
-        id: build-backend-image
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          IMAGE_TAG: ${{ github.sha }}
-        run: |
-          docker build -t $ECR_REGISTRY/${{ env.ECR_BACKEND_REPO }}:$IMAGE_TAG -f backend/Dockerfile .
-          docker push $ECR_REGISTRY/${{ env.ECR_BACKEND_REPO }}:$IMAGE_TAG
-          echo "image=$ECR_REGISTRY/${{ env.ECR_BACKEND_REPO }}:$IMAGE_TAG" >> $GITHUB_OUTPUT
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: backend/Dockerfile
+          target: fast-ci
+          push: true
+          tags: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_BACKEND_REPO }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       # ── Build & Push Frontend ──────────────────────────────────────
       - name: Build, tag, and push Frontend Image
-        id: build-frontend-image
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          IMAGE_TAG: ${{ github.sha }}
-        run: |
-          docker build -t $ECR_REGISTRY/${{ env.ECR_FRONTEND_REPO }}:$IMAGE_TAG \
-            --build-arg SERVER_HOST=${{ secrets.SERVER_HOST }} \
-            --build-arg SERVER_PORT=${{ secrets.SERVER_PORT || '80' }} \
-            -f frontend/Dockerfile .
-          docker push $ECR_REGISTRY/${{ env.ECR_FRONTEND_REPO }}:$IMAGE_TAG
-          echo "image=$ECR_REGISTRY/${{ env.ECR_FRONTEND_REPO }}:$IMAGE_TAG" >> $GITHUB_OUTPUT
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: frontend/Dockerfile
+          target: fast-ci
+          push: true
+          tags: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_FRONTEND_REPO }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       # ── Deploy Backend to ECS ─────────────────────────────────────
       - name: Fill in the new image ID in the Amazon ECS task definition (Backend)
@@ -79,7 +84,7 @@ jobs:
         with:
           task-definition: ${{ env.ECS_BACKEND_TASK_DEF }}
           container-name: backend
-          image: ${{ steps.build-backend-image.outputs.image }}
+          image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_BACKEND_REPO }}:${{ github.sha }}
           environment-variables: |
             RDS_HOSTNAME=${{ secrets.RDS_HOSTNAME }}
             RDS_DB_NAME=${{ secrets.RDS_DB_NAME }}
@@ -94,7 +99,7 @@ jobs:
           task-definition: ${{ steps.task-def-backend.outputs.task-definition }}
           service: ${{ env.ECS_BACKEND_SERVICE }}
           cluster: ${{ env.ECS_CLUSTER }}
-          wait-for-service-stability: true
+          wait-for-service-stability: false
 
       # ── Deploy Frontend to ECS ────────────────────────────────────
       - name: Fill in the new image ID in the Amazon ECS task definition (Frontend)
@@ -103,7 +108,7 @@ jobs:
         with:
           task-definition: ${{ env.ECS_FRONTEND_TASK_DEF }}
           container-name: frontend
-          image: ${{ steps.build-frontend-image.outputs.image }}
+          image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_FRONTEND_REPO }}:${{ github.sha }}
 
       - name: Deploy Amazon ECS Task (Frontend)
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
@@ -111,4 +116,4 @@ jobs:
           task-definition: ${{ steps.task-def-frontend.outputs.task-definition }}
           service: ${{ env.ECS_FRONTEND_SERVICE }}
           cluster: ${{ env.ECS_CLUSTER }}
-          wait-for-service-stability: true
+          wait-for-service-stability: false

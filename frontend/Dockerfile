@@ -42,13 +42,16 @@ RUN --mount=type=cache,id=frontend-gradle,target=/root/.gradle \
     --mount=type=cache,id=frontend-konan,target=/root/.konan \
     ./gradlew :frontend:composeApp:wasmJsBrowserDistribution --no-daemon
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Stage 2: Serve — tiny Nginx image with only the compiled static files.
-# No JDK, no source code, no Gradle. Final image size: ~50MB.
-# ─────────────────────────────────────────────────────────────────────────────
-FROM nginx:alpine
-
-COPY --from=builder /frontend/frontend/composeApp/build/dist/wasmJs/productionExecutable /usr/share/nginx/html
-
+# Stage 2: Serve base image
+FROM nginx:alpine AS base
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
+
+# Stage 3: Fast CI/CD target (copies host-compiled wasm files)
+FROM base AS fast-ci
+COPY frontend/composeApp/build/dist/wasmJs/productionExecutable /usr/share/nginx/html
+
+# Stage 4: Local development target (compiles inside Docker)
+# Default stage since it is the last stage
+FROM base AS local
+COPY --from=builder /frontend/frontend/composeApp/build/dist/wasmJs/productionExecutable /usr/share/nginx/html

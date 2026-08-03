@@ -29,13 +29,21 @@ COPY backend/src/ backend/src/
 RUN --mount=type=cache,id=backend-gradle,target=/root/.gradle \
     ./gradlew :backend:bootJar --no-daemon --parallel --build-cache
 
-# Stage 2: Runtime image
-FROM eclipse-temurin:21-jre-jammy
+# Stage 2: Runtime base image
+FROM eclipse-temurin:21-jre-jammy AS base
 WORKDIR /app
 
 # Install system package libgomp1 required for ND4J CPU native execution
 RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 && rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /workspace/backend/build/libs/*.jar app.jar
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
+
+# Stage 3: Fast CI/CD target (copies host-compiled jar)
+FROM base AS fast-ci
+COPY backend/build/libs/*.jar app.jar
+
+# Stage 4: Local development target (compiles inside Docker)
+# Default stage since it is the last stage
+FROM base AS local
+COPY --from=builder /workspace/backend/build/libs/*.jar app.jar
