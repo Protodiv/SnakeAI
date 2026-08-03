@@ -7,17 +7,18 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.socket.WebSocketSession
-import reactor.core.publisher.Mono
 import ua.snakeai.backend.ai.DqnAgent
 import ua.snakeai.backend.ai.SnakeEnv
+import ua.snakeai.backend.service.TrainModelService
 import ua.snakeai.contract.*
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.milliseconds
 
 @Component
 class AiPlayWebSocketHandler(
+    aiModelService: TrainModelService,
     @Value("\${model.storage.path:models}") modelStoragePath: String
-) : BaseAiWebSocketHandler(modelStoragePath, LoggerFactory.getLogger(AiPlayWebSocketHandler::class.java)) {
+) : BaseAiWebSocketHandler(modelStoragePath, aiModelService, LoggerFactory.getLogger(AiPlayWebSocketHandler::class.java)) {
 
     override suspend fun handleSession(session: WebSocketSession, scope: CoroutineScope) {
         var isRunning = false
@@ -39,7 +40,7 @@ class AiPlayWebSocketHandler(
                                 val actualSize = resolveFieldSize(cmd.fieldSize)
                                 tickRateMs = cmd.tickRateMs ?: 120L
 
-                                agent = loadOrCreateAgent(modelName)
+                                agent = loadAgent(modelName)
                                 gameState = GameEngine.initGame(actualSize, 4, Direction.RIGHT, Random.Default)
                                     .copy(status = GameStatus.PLAYING)
 

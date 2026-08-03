@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
+import org.springframework.web.server.ResponseStatusException
 import org.springframework.web.server.ServerWebExchange
 import ua.snakeai.backend.exception.BaseServiceException
 import ua.snakeai.contract.ErrorResponse
@@ -13,6 +14,30 @@ import java.time.Instant
 @RestControllerAdvice
 class GlobalExceptionHandler {
     private val logger = LoggerFactory.getLogger(javaClass)
+
+    @ExceptionHandler(ResponseStatusException::class)
+    fun handleResponseStatusException(ex: ResponseStatusException, exchange: ServerWebExchange): ResponseEntity<ErrorResponse> {
+        val status = ex.statusCode.value()
+        if (ex.statusCode.is5xxServerError) {
+            logger.error("Response status exception: {} {}", ex.statusCode, ex.reason ?: ex.message, ex)
+        } else {
+            logger.warn("Response status exception: {} {}", ex.statusCode, ex.reason ?: ex.message)
+        }
+
+        val code = when (status) {
+            HttpStatus.NOT_FOUND.value() -> "NOT_FOUND"
+            HttpStatus.METHOD_NOT_ALLOWED.value() -> "METHOD_NOT_ALLOWED"
+            HttpStatus.BAD_REQUEST.value() -> "BAD_REQUEST"
+            else -> "ERROR_$status"
+        }
+
+        return buildResponse(
+            statusCode = status,
+            errorCode = code,
+            message = ex.reason ?: ex.message ?: "Response status exception",
+            exchange = exchange
+        )
+    }
 
     @ExceptionHandler(Exception::class)
     fun handleGeneralException(ex: Exception, exchange: ServerWebExchange): ResponseEntity<ErrorResponse> {
@@ -51,7 +76,7 @@ class GlobalExceptionHandler {
         message: String,
         exchange: ServerWebExchange
     ): ResponseEntity<ErrorResponse> {
-        val httpStatus = HttpStatus.valueOf(statusCode)
+        val httpStatus = HttpStatus.resolve(statusCode) ?: HttpStatus.INTERNAL_SERVER_ERROR
         val response = ErrorResponse(
             message = message,
             code = errorCode,
