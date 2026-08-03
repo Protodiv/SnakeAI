@@ -8,12 +8,16 @@ import org.springframework.web.reactive.socket.WebSocketHandler
 import org.springframework.web.reactive.socket.WebSocketSession
 import reactor.core.publisher.Mono
 import ua.snakeai.backend.ai.DqnAgent
+import ua.snakeai.backend.exception.BaseServiceException
+import ua.snakeai.backend.exception.ModelLoadException
+import ua.snakeai.backend.service.TrainModelService
 import ua.snakeai.contract.*
 import java.io.File
 import java.time.LocalDateTime
 
 abstract class BaseAiWebSocketHandler(
     protected val modelStoragePath: String,
+    protected val trainModelService: TrainModelService,
     protected val log: Logger
 ) : WebSocketHandler {
 
@@ -33,9 +37,10 @@ abstract class BaseAiWebSocketHandler(
             } catch (e: Exception) {
                 log.error("Error handling WebSocket session [ID: ${session.id}]", e)
                 try {
+                    val errorCode = if (e is BaseServiceException) e.errorCode else "WS_INTERNAL_ERROR"
                     val errorResponse = ErrorResponse(
                         message = e.message ?: "Unknown error occurred during WS execution",
-                        code = "WS_INTERNAL_ERROR",
+                        code = errorCode,
                         timestamp = LocalDateTime.now().toString()
                     )
                     val jsonStr = json.encodeToString(errorResponse)
@@ -64,6 +69,17 @@ abstract class BaseAiWebSocketHandler(
         val modelsDir = File(modelStoragePath)
         if (!modelsDir.exists()) modelsDir.mkdirs()
         val modelFile = File(modelsDir, "$modelName.zip")
+        
+        if (!modelFile.exists()) {
+            try {
+                log.info("Model '$modelName' not found locally. Attempting to download from storage service...")
+                trainModelService.downloadModel(modelName, modelFile)
+                log.info("Successfully downloaded model '$modelName' from storage service.")
+            } catch (e: Exception) {
+                log.warn("Failed to download model '$modelName' from storage service: ${e.message}. Proceeding to create/initialize a new agent.")
+            }
+        }
+
         return if (modelFile.exists()) {
             DqnAgent(modelName, modelFile)
         } else {
@@ -77,6 +93,28 @@ abstract class BaseAiWebSocketHandler(
             } else {
                 DqnAgent(modelName)
             }
+        }
+    }
+
+    protected fun loadAgent(modelName: String): DqnAgent {
+        val modelsDir = File(modelStoragePath)
+        if (!modelsDir.exists()) modelsDir.mkdirs()
+        val modelFile = File(modelsDir, "$modelName.zip")
+        
+        if (!modelFile.exists()) {
+            try {
+                log.info("Model '$modelName' not found locally. Attempting to download from storage service...")
+                trainModelService.downloadModel(modelName, modelFile)
+                log.info("Successfully downloaded model '$modelName' from storage service.")
+            } catch (e: Exception) {
+                log.warn("Failed to download model '$modelName' from storage service: ${e.message}")
+            }
+        }
+
+        if (modelFile.exists()) {
+            return DqnAgent(modelName, modelFile)
+        } else {
+            throw ModelLoadException("Model '$modelName' was not found in storage. Please train the model first.")
         }
     }
 

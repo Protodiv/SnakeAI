@@ -70,4 +70,8 @@ class TrainModelService(
         
         repository.delete(entity)
     }
+
+    fun downloadModel(name: String, destinationFile: File): File {
+        return modelStorageRepository.fetchModel(name, destinationFile)
+    }
 }

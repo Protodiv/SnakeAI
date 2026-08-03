@@ -28,3 +28,10 @@ class ModelDeleteException(message: String, cause: Throwable? = null) : BaseServ
     message = message,
     cause = cause
 )
+
+class ModelLoadException(message: String, cause: Throwable? = null) : BaseServiceException(
+    statusCode = HttpStatus.NOT_FOUND.value(),
+    errorCode = "MODEL_LOAD_ERROR",
+    message = message,
+    cause = cause
+)

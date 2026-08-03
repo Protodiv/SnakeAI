@@ -41,4 +41,17 @@ class ModelRestControllerTest {
             .jsonPath("$[0].efficiency").isEqualTo(0.85)
             .jsonPath("$[0].topScore").isEqualTo(15)
     }
+
+    @Test
+    fun testNotFoundResource() {
+        webTestClient.get()
+            .uri("/api/non-existent-url-that-does-not-exist")
+            .exchange()
+            .expectStatus().isNotFound
+            .expectBody()
+            .jsonPath("$.status").isEqualTo(404)
+            .jsonPath("$.code").isEqualTo("NOT_FOUND")
+            .jsonPath("$.message").isNotEmpty
+            .jsonPath("$.path").isEqualTo("/api/non-existent-url-that-does-not-exist")
+    }
 }

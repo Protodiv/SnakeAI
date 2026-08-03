@@ -23,10 +23,10 @@ import kotlin.time.Duration.Companion.milliseconds
 
 @Component
 class AiTrainWebSocketHandler(
-    private val trainModelService: TrainModelService,
+    aiModelService: TrainModelService,
     @Value("\${model.storage.path:models}") modelStoragePath: String,
     @Value("\${model.training.default-max-episodes:100}") private val defaultMaxEpisodes: Int
-) : BaseAiWebSocketHandler(modelStoragePath, LoggerFactory.getLogger(AiTrainWebSocketHandler::class.java)) {
+) : BaseAiWebSocketHandler(modelStoragePath, aiModelService, LoggerFactory.getLogger(AiTrainWebSocketHandler::class.java)) {
 
     override suspend fun handleSession(session: WebSocketSession, scope: CoroutineScope) {
         var isTraining = false
