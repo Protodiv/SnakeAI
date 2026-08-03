@@ -41,7 +41,7 @@ ENTRYPOINT ["java", "-jar", "app.jar"]
 
 # Stage 3: Fast CI/CD target (copies host-compiled jar)
 FROM base AS fast-ci
-COPY backend/build/libs/*.jar app.jar
+COPY backend/app.jar app.jar
 
 # Stage 4: Local development target (compiles inside Docker)
 # Default stage since it is the last stage

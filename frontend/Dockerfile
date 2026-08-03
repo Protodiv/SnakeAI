@@ -49,7 +49,7 @@ CMD ["nginx", "-g", "daemon off;"]
 
 # Stage 3: Fast CI/CD target (copies host-compiled wasm files)
 FROM base AS fast-ci
-COPY frontend/composeApp/build/dist/wasmJs/productionExecutable /usr/share/nginx/html
+COPY frontend/dist /usr/share/nginx/html
 
 # Stage 4: Local development target (compiles inside Docker)
 # Default stage since it is the last stage

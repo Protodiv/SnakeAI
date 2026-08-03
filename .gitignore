@@ -43,3 +43,6 @@ doc/
 help.txt
 /local.properties
 /.localstack/
+
+# Staged production artifacts (GitHub Actions)
+/backend/app.jar

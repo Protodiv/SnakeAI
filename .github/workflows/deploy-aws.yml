@@ -4,6 +4,12 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - '**.md'
+      - 'doc/**'
+      - '.gitignore'
+      - '.dockerignore'
+      - 'LICENSE'
 
 permissions:
   id-token: write # Required for AWS OIDC authentication
@@ -38,6 +44,12 @@ jobs:
           SERVER_HOST: ${{ secrets.SERVER_HOST }}
           SERVER_PORT: ${{ secrets.SERVER_PORT || '80' }}
         run: ./gradlew build
+
+      - name: Stage build artifacts
+        run: |
+          mkdir -p frontend/dist
+          cp -r frontend/composeApp/build/dist/wasmJs/productionExecutable/. frontend/dist/
+          cp backend/build/libs/backend-1.0-SNAPSHOT.jar backend/app.jar
 
       # Authenticate to AWS using OIDC (Role Assumption) instead of long-lived access keys
       - name: Configure AWS Credentials
